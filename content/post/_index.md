@@ -1,6 +1,5 @@
 +++
-aliases = ["posts", "articles", "blog", "showcase", "docs"]
-title = "Posts"
-author = "Hugo Authors"
-tags = ["index"]
+date = '2026-05-26'
+draft = false
+title = 'Research Notes'
 +++
