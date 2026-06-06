@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Research Notes on My Research Notes</title>
+    <link>http://localhost:1313/posts/</link>
+    <description>Recent content in Research Notes on My Research Notes</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 02 Jun 2026 23:35:53 -0400</lastBuildDate>
+    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Stochastic Gradient Descent</title>
+      <link>http://localhost:1313/posts/sgd/</link>
+      <pubDate>Tue, 26 May 2026 23:35:53 -0400</pubDate>
+      <guid>http://localhost:1313/posts/sgd/</guid>
+      <description>&lt;h3 id=&#34;sgd-as-an-early-diffusion-model&#34;&gt;SGD as an early diffusion model&lt;/h3&gt;
+&lt;p&gt;Generative diffusion models aim to reconstruct an underlying probability distribution from a given
+set of samples/observations (this is a bit crude in description, as diffusion models actually
+approximate a score function). They have been very successful in methods that predict protein
+structures from a given sequence. Interestingly enough, stochastic gradient descent (SGD) that
+is widely used to train deep learning models has ideas in common to those used in diffusion
+models, and this commonality is explored here. I show that SGD induces the evolution of a
+probability distribution governed by a Fokker-Planck equation, with a diffusion matrix
+proportional to a covariance matrix of gradients; and its score function given by the
+gradient of the loss function employed in training the machine learning model.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Information Geometry and SGD</title>
+      <link>http://localhost:1313/posts/naturalgradients/</link>
+      <pubDate>Tue, 02 Jun 2026 23:35:53 -0400</pubDate>
+      <guid>http://localhost:1313/posts/naturalgradients/</guid>
+      <description>&lt;h3 id=&#34;natural-gradients-in-stochastic-gradient-descent&#34;&gt;Natural gradients in stochastic gradient descent&lt;/h3&gt;
+&lt;p&gt;The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note
+is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is
+defined as (I have dropped the coefficient related to minibatch size):
+&lt;/p&gt;
+$$
+C(\theta) \equiv \left\langle{\bf f}(s,\mathbf{\theta})\odot{\bf f}(s,\mathbf{\theta})
+\right\rangle - {\bf f}(\mathbf{\theta})\odot{\bf f}(\mathbf{\theta}). 
+$$&lt;p&gt;
+As before, the force for a sample $s$ is ${\bf f}(s,\mathbf{\theta}) = -\nabla_{\theta}E(s,\mathbf{\theta})$
+is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\mathbf{\theta})$
+as a form of energy, the force is a score function for a Boltzmann distribution induced by this
+energy, and $C(\mathbf{\theta})$ becomes the Fisher Information matrix for this distribution.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

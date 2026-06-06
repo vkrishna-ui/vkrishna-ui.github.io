@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Information Geometry and SGD | My Research Notes</title>
+<meta name="keywords" content="">
+<meta name="description" content="Natural gradients in stochastic gradient descent
+The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note
+is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is
+defined as (I have dropped the coefficient related to minibatch size):
+
+$$
+C(\theta) \equiv \left\langle{\bf f}(s,\mathbf{\theta})\odot{\bf f}(s,\mathbf{\theta})
+\right\rangle - {\bf f}(\mathbf{\theta})\odot{\bf f}(\mathbf{\theta}). 
+$$
+As before, the force for a sample $s$ is ${\bf f}(s,\mathbf{\theta}) = -\nabla_{\theta}E(s,\mathbf{\theta})$
+is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\mathbf{\theta})$
+as a form of energy, the force is a score function for a Boltzmann distribution induced by this
+energy, and $C(\mathbf{\theta})$ becomes the Fisher Information matrix for this distribution.">
+<meta name="author" content="V. Krishna">
+<link rel="canonical" href="http://localhost:1313/posts/naturalgradients/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.311dfe8d2c556304a9446bc0c180a0a0a2b3c750e1277d27924f06e8b3bc29dd.css" integrity="sha256-MR3&#43;jSxVYwSpRGvAwYCgoKKzx1DhJ30nkk8G6LO8Kd0=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/naturalgradients/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+
+>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false}
+        ],
+        throwOnError: false 
+    });
+});
+</script>
+
+
+<meta property="og:url" content="http://localhost:1313/posts/naturalgradients/">
+  <meta property="og:site_name" content="My Research Notes">
+  <meta property="og:title" content="Information Geometry and SGD">
+  <meta property="og:description" content="Natural gradients in stochastic gradient descent The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is defined as (I have dropped the coefficient related to minibatch size): $$ C(\theta) \equiv \left\langle{\bf f}(s,\mathbf{\theta})\odot{\bf f}(s,\mathbf{\theta}) \right\rangle - {\bf f}(\mathbf{\theta})\odot{\bf f}(\mathbf{\theta}). $$ As before, the force for a sample $s$ is ${\bf f}(s,\mathbf{\theta}) = -\nabla_{\theta}E(s,\mathbf{\theta})$ is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\mathbf{\theta})$ as a form of energy, the force is a score function for a Boltzmann distribution induced by this energy, and $C(\mathbf{\theta})$ becomes the Fisher Information matrix for this distribution.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-06-02T23:35:53-04:00">
+    <meta property="article:modified_time" content="2026-06-02T23:35:53-04:00">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Information Geometry and SGD">
+  <meta name="twitter:description" content="Natural gradients in stochastic gradient descent The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is defined as (I have dropped the coefficient related to minibatch size): $$ C(\theta) \equiv \left\langle{\bf f}(s,\mathbf{\theta})\odot{\bf f}(s,\mathbf{\theta}) \right\rangle - {\bf f}(\mathbf{\theta})\odot{\bf f}(\mathbf{\theta}). $$ As before, the force for a sample $s$ is ${\bf f}(s,\mathbf{\theta}) = -\nabla_{\theta}E(s,\mathbf{\theta})$ is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\mathbf{\theta})$ as a form of energy, the force is a score function for a Boltzmann distribution induced by this energy, and $C(\mathbf{\theta})$ becomes the Fisher Information matrix for this distribution.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Research Notes",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Information Geometry and SGD",
+      "item": "http://localhost:1313/posts/naturalgradients/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Information Geometry and SGD",
+  "name": "Information Geometry and SGD",
+  "description": "Natural gradients in stochastic gradient descent The diffusion matrix, $C(\\mathbf{\\theta})$ that falls out of the probabilistic treatment of SGD in my previous note is positive definite, as it is a covariance matrix. To recapitulate, $C(\\mathbf{\\theta})$ is defined as (I have dropped the coefficient related to minibatch size): $$ C(\\theta) \\equiv \\left\\langle{\\bf f}(s,\\mathbf{\\theta})\\odot{\\bf f}(s,\\mathbf{\\theta}) \\right\\rangle - {\\bf f}(\\mathbf{\\theta})\\odot{\\bf f}(\\mathbf{\\theta}). $$ As before, the force for a sample $s$ is ${\\bf f}(s,\\mathbf{\\theta}) = -\\nabla_{\\theta}E(s,\\mathbf{\\theta})$ is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\\mathbf{\\theta})$ as a form of energy, the force is a score function for a Boltzmann distribution induced by this energy, and $C(\\mathbf{\\theta})$ becomes the Fisher Information matrix for this distribution.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "Natural gradients in stochastic gradient descent The diffusion matrix, $C(\\mathbf{\\theta})$ that falls out of the probabilistic treatment of SGD in my previous note is positive definite, as it is a covariance matrix. To recapitulate, $C(\\mathbf{\\theta})$ is defined as (I have dropped the coefficient related to minibatch size): $$ C(\\theta) \\equiv \\left\\langle{\\bf f}(s,\\mathbf{\\theta})\\odot{\\bf f}(s,\\mathbf{\\theta}) \\right\\rangle - {\\bf f}(\\mathbf{\\theta})\\odot{\\bf f}(\\mathbf{\\theta}). $$ As before, the force for a sample $s$ is ${\\bf f}(s,\\mathbf{\\theta}) = -\\nabla_{\\theta}E(s,\\mathbf{\\theta})$ is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\\mathbf{\\theta})$ as a form of energy, the force is a score function for a Boltzmann distribution induced by this energy, and $C(\\mathbf{\\theta})$ becomes the Fisher Information matrix for this distribution.\nTo understand the underlying geometry, an inner product can be defined as follows: $$ \\langle{\\bf v},{\\bf u}\\rangle_{c} \\equiv {\\bf v}\\cdot C(\\theta)\\cdot{\\bf u} $$ and correspondingly, the norm of a vector, $\\lVert v\\rvert^{2} \\equiv \\langle{\\bf v},{\\bf v}\\rangle_{c}$, then it can be shown that this norm satisfies the Cauchy-Schwarz inequality (this is because the covariance is symmetric and positive definite: $$ \\lVert {\\bf v} + {\\bf u}\\rVert^{2} \\leq (\\lVert {\\bf v}\\rVert + \\lVert {\\bf u}\\rVert)^2 $$Now, consider the following infinitesimal changes for a given sample $s$: $$ d\\xi(s,\\vec{\\theta}) \\equiv ({\\bf f}(s,\\theta) - {\\bf f}(\\theta))\\cdot d\\vec{\\theta} $$This is simply the displacement along the direction of the loss gradient for that sample, compared to the mean displacement for an infinitesimal change in parameters. Then, the (Euclidean) distance traversed upon the infinitesimal change in parameters when averaged over all samples $s$ is: $$ \\left\\langle\\lVert d\\xi\\rVert^{2}\\right\\rangle = d\\vec{\\theta}\\cdot C(\\vec{\\theta})\\cdot d\\vec{\\theta} $$Using the definition of the inner product, we get a nice relation: $$ \\left\\langle\\lVert d\\xi\\rVert^{2}\\right\\rangle = \\lVert d\\vec{\\theta}\\rVert_{c}^{2} $$ (I have used the subscript c, to distinguish our inner product norm from an Euclidean norm). This has a neat geometric interpretation as saying that the average mean square change in error upon changing parameters of our ML model infinitesimally, is equal to the infinitesimal distance in our (curved) parameter space,endowed by a metric given by the covariance. This essentially says that a curved metric space (at least for some metrics) is an average over randomly fluctuation flat geometries, which is a nice way of thinking about curved geometries, although I am not sure how general this is, and whether it holds for arbitrary metrics. In this curved space, we can rewrite the Fokker-Planck equation also as an inner product: $$ \\partial_{t}\\rho = \\left\\langle\\nabla_{\\theta}, \\Bigg[-C^{-1}\\rho{\\bf f} + \\frac{1}{2\\vert B\\vert}\\nabla_{\\theta}\\sigma \\Bigg]\\right\\rangle_{c} $$ In a curved space with a metric $C(\\theta)$, Amari defined a “natural” gradient to be: $$ \\nabla_{C}\\sigma(\\vec{\\theta}) \\equiv = C^{-1}\\cdot\\nabla_{\\vec{\\theta}}\\sigma(\\vec{\\theta}) $$ This definition identifies the true gradient, or direction of steepest descent in a curved space. Thus, for our example a true Fokker-Planck equation in inner product space will be of the form: $$ \\partial_{t}\\rho = \\left\\langle\\nabla^{*}_{C},\\Bigg[-C^{-1}f\\rho + \\frac{1}{2\\vert B\\vert}\\nabla_{C}\\rho\\Bigg]\\right\\rangle_{c} $$ Here, $\\nabla^{*}_{C}$ is the adjoint operator for the natural gradient. This is equivalent to: $$ \\partial_{t}\\rho = -\\nabla^{*}_{C}\\cdot{\\bf J}\\rho $$ With a current given by: $$ {\\bf J} = {\\bf f}\\rho - \\frac{1}{2\\vert B\\vert}\\nabla_{\\vec{\\theta}}\\ln\\rho $$This expression for the current is independent of the covariance, and thus this dynamics converges to a steady state Boltzmann distribution, when the current ${\\bf J} = 0 $ ! The corresponding stochastic natural gradient dynamics, with minibatch $B$ has the form: $$ \\vec{\\theta}_{t + 1} = \\vec{\\theta}_{t} - \\eta(t) C^{-1}(\\vec{\\theta})\\cdot\\nabla_{\\theta}E(\\vec{\\theta}_{t},B) $$ This dynamics is guaranteed to result in a steady state probability over the space of parameters, which also is the desired true parameter probability distribution obtained by minimizing the error! The tradeoff here is that the estimation of the gradient becomes computationally harder, as it involves estimating the inverse of a Fisher Information matrix.\nNB: Please feel free to inform me of any errors or oversights in the derivations presented here.\nFurther Reading S.I Amari Neural Computation (1998) 10(2) 251-276; doi: https://doi.org/10.1162/089976698300017746 Natural gradients were introduced by Amari into machine learning and are an entry into the field of Information geometry.\n",
+  "wordCount" : "658",
+  "inLanguage": "en",
+  "datePublished": "2026-06-02T23:35:53-04:00",
+  "dateModified": "2026-06-02T23:35:53-04:00",
+  "author":{
+    "@type": "Person",
+    "name": "V. Krishna"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/naturalgradients/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "My Research Notes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="header-nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="My Research Notes (Alt + H)">My Research Notes</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu" class="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="/posts/">Research Notes</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</nav>
+    <h1 class="post-title entry-hint-parent">
+      Information Geometry and SGD
+    </h1>
+    <div class="post-meta">
+
+<span title='2026-06-02 23:35:53 -0400 EDT'>June 2, 2026</span>&nbsp;·&nbsp;<span>4 min</span>&nbsp;·&nbsp;<span>V. Krishna</span>
+
+</div>
+  </header> 
+  <div class="post-content md-content"><h3 id="natural-gradients-in-stochastic-gradient-descent">Natural gradients in stochastic gradient descent<a hidden class="anchor" aria-hidden="true" href="#natural-gradients-in-stochastic-gradient-descent">#</a></h3>
+<p>The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note
+is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is
+defined as (I have dropped the coefficient related to minibatch size):
+</p>
+$$
+C(\theta) \equiv \left\langle{\bf f}(s,\mathbf{\theta})\odot{\bf f}(s,\mathbf{\theta})
+\right\rangle - {\bf f}(\mathbf{\theta})\odot{\bf f}(\mathbf{\theta}). 
+$$<p>
+As before, the force for a sample $s$ is ${\bf f}(s,\mathbf{\theta}) = -\nabla_{\theta}E(s,\mathbf{\theta})$
+is the negative gradient of the sample error. Importantly, if we interpret the error $E(s,\mathbf{\theta})$
+as a form of energy, the force is a score function for a Boltzmann distribution induced by this
+energy, and $C(\mathbf{\theta})$ becomes the Fisher Information matrix for this distribution.</p>
+<p>To understand the underlying geometry, an inner product can be defined as follows:
+</p>
+$$
+\langle{\bf v},{\bf u}\rangle_{c} \equiv {\bf v}\cdot C(\theta)\cdot{\bf u}
+$$<p>
+and correspondingly, the norm of a vector, $\lVert v\rvert^{2} \equiv \langle{\bf v},{\bf v}\rangle_{c}$, then it
+can be shown that this norm satisfies the Cauchy-Schwarz inequality (this is because the covariance is symmetric and
+positive definite:
+</p>
+$$
+\lVert {\bf v} + {\bf u}\rVert^{2} \leq (\lVert {\bf v}\rVert + \lVert {\bf u}\rVert)^2
+$$<p>Now, consider the following infinitesimal changes for a given sample $s$:
+</p>
+$$
+d\xi(s,\vec{\theta}) \equiv ({\bf f}(s,\theta) - {\bf f}(\theta))\cdot d\vec{\theta}
+$$<p>This is simply the displacement along the direction of the loss gradient for that sample, compared
+to the mean displacement for an infinitesimal change in parameters. Then, the (Euclidean) distance
+traversed upon the infinitesimal change in parameters when averaged over all samples $s$ is:
+</p>
+$$
+\left\langle\lVert d\xi\rVert^{2}\right\rangle = d\vec{\theta}\cdot C(\vec{\theta})\cdot d\vec{\theta}
+$$<p>Using the definition of the inner product, we get a nice relation:
+</p>
+$$
+\left\langle\lVert d\xi\rVert^{2}\right\rangle = \lVert d\vec{\theta}\rVert_{c}^{2}
+$$<p>
+(I have used the subscript c, to distinguish our inner product norm from an Euclidean norm). This has a
+neat geometric interpretation as saying that the average mean square change in error upon changing
+parameters of our ML model infinitesimally, is equal to the infinitesimal distance in our (curved)
+parameter space,endowed by a metric given by the covariance. This essentially says that a curved
+metric space (at least for some metrics) is an average over randomly fluctuation flat geometries,
+which is a nice way of thinking about curved geometries, although I am not sure how general this
+is, and whether it holds for arbitrary metrics.
+In this curved space, we can rewrite the Fokker-Planck equation also as an inner product:
+</p>
+$$
+\partial_{t}\rho = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\rho{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
+$$<p>
+In a curved space with a metric $C(\theta)$, Amari defined a &ldquo;natural&rdquo; gradient to be:
+</p>
+$$
+\nabla_{C}\sigma(\vec{\theta}) \equiv = C^{-1}\cdot\nabla_{\vec{\theta}}\sigma(\vec{\theta})
+$$<p>
+This definition identifies the true gradient, or direction of steepest descent in a curved space.
+Thus, for our example a true Fokker-Planck equation in inner product space will be of the form:
+</p>
+$$
+\partial_{t}\rho = \left\langle\nabla^{*}_{C},\Bigg[-C^{-1}f\rho + \frac{1}{2\vert B\vert}\nabla_{C}\rho\Bigg]\right\rangle_{c}
+$$<p>
+Here, $\nabla^{*}_{C}$ is the adjoint operator for the natural gradient.
+This is equivalent to:
+</p>
+$$
+\partial_{t}\rho  = -\nabla^{*}_{C}\cdot{\bf J}\rho
+$$<p>
+With a current given by:
+</p>
+$$
+{\bf J} = {\bf f}\rho - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
+$$<p>This expression for the current is independent of the covariance, and thus this dynamics
+converges to a steady state Boltzmann distribution, when the current ${\bf J} = 0 $ !
+The corresponding stochastic natural gradient dynamics, with minibatch $B$ has the form:
+</p>
+$$
+\vec{\theta}_{t + 1} = \vec{\theta}_{t} - \eta(t) C^{-1}(\vec{\theta})\cdot\nabla_{\theta}E(\vec{\theta}_{t},B)
+$$<p>
+This dynamics is guaranteed to result in a steady state probability over the space of parameters,
+which also is the desired true parameter probability distribution obtained by minimizing the
+error! The tradeoff here is that the estimation of the gradient becomes computationally harder,
+as it involves estimating the inverse of a Fisher Information matrix.</p>
+<p>NB: Please feel free to inform me of any errors or oversights in the derivations presented here.</p>
+<h4 id="further-reading">Further Reading<a hidden class="anchor" aria-hidden="true" href="#further-reading">#</a></h4>
+<p>S.I Amari Neural Computation (1998) 10(2) 251-276; doi: <a href="https://doi.org/10.1162/089976698300017746">https://doi.org/10.1162/089976698300017746</a>
+Natural gradients were introduced by Amari into machine learning and are an entry into the field
+of Information geometry.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/sgd/">
+    <span class="title">« Prev</span>
+    <span>Stochastic Gradient Descent</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">My Research Notes</a></span> · 
+
+    
+    
+    <span>
+        Powered by
+        <a href="https://gohugo.io/?utm_source=papermod" rel="noopener" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" id="top-link" class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up">
+        <polyline points="17 11 12 6 7 11"></polyline>
+        <polyline points="17 18 12 13 7 18"></polyline>
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var toplink = document.getElementById("top-link");
+    window.onscroll = function () {
+        const scrollThreshold = window.innerHeight;
+        if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+            toplink.classList.remove("hidden");
+        } else {
+            toplink.classList.add("hidden");
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

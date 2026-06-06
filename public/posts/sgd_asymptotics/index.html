@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Computational Biology &amp; AI Research</title>
+<meta name="keywords" content="">
+<meta name="description" content="$$
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+\newcommand{\ta}{\vec{\theta}}
+\newcommand{\fb}{{\bf f}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\cb}{\mathbf{C}(\vec{\theta})}
+\DeclareMathOperator{\Tr}{Tr} 
+$$Asymptotic Properties of the Stochastic Gradient Descent Method
+Author: Vinod Krishna
+Abstract
+This paper presents an analysis of the asymptotic and dynamical properties of the minibatch
+stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD.
+The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution,
+with optimal learning parameters corresponding to the minima of the free energy of this distribution.
+It is shown that the SGD algorithm does not generally converge to the free energy minima of
+the Boltzmann-Gibbs distribution.
+A modified SGD algorithm is derived, based on an
+information geometric interpretation of SGD, that is guaranteed to sample the free energy of the
+Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface.
+By accounting for the
+geometry of the space in which the data is embedded, I derive representation invariant measures of
+generalization performance.
+The analysis demonstrates that pure gradient descent methods would remain
+trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random
+sampling of minibatches could allow for an escape from local minima to enable complete sampling of
+loss surfaces with multiple minima.
+The efficiency of such a sampling is exponential in the minibatch size,
+and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size
+grows.">
+<meta name="author" content="V. Krishna">
+<link rel="canonical" href="http://localhost:1313/posts/sgd_asymptotics/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.2c8228b71da1fb69b2ea33c8c9133fb9d45e7525b36c230d2e3572e431604868.css" integrity="sha256-LIIotx2h&#43;2my6jPIyRM/udRedSWzbCMNLjVy5DFgSGg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/sgd_asymptotics/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css" integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js" integrity="sha384-VQ8d8WVFw0yHhCk5E8I86oOhv48xLpnDZx5T9GogA/Y84DcCKWXDmSDfn13bzFZY" crossorigin="anonymous"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+
+>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false}
+        ],
+        throwOnError: false 
+    });
+});
+</script>
+
+
+<meta property="og:url" content="http://localhost:1313/posts/sgd_asymptotics/">
+  <meta property="og:site_name" content="Computational Biology & AI Research">
+  <meta property="og:title" content="Computational Biology & AI Research">
+  <meta property="og:description" content="$$ \newcommand{\dataset}{{\cal D}} \newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial #2}} \newcommand{\ta}{\vec{\theta}} \newcommand{\fb}{{\bf f}} \newcommand{\norm}[1]{\left\lVert #1\right\rVert} \newcommand{\cb}{\mathbf{C}(\vec{\theta})} \DeclareMathOperator{\Tr}{Tr} $$Asymptotic Properties of the Stochastic Gradient Descent Method Author: Vinod Krishna
+Abstract This paper presents an analysis of the asymptotic and dynamical properties of the minibatch stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD. The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution, with optimal learning parameters corresponding to the minima of the free energy of this distribution. It is shown that the SGD algorithm does not generally converge to the free energy minima of the Boltzmann-Gibbs distribution. A modified SGD algorithm is derived, based on an information geometric interpretation of SGD, that is guaranteed to sample the free energy of the Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface. By accounting for the geometry of the space in which the data is embedded, I derive representation invariant measures of generalization performance. The analysis demonstrates that pure gradient descent methods would remain trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random sampling of minibatches could allow for an escape from local minima to enable complete sampling of loss surfaces with multiple minima. The efficiency of such a sampling is exponential in the minibatch size, and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size grows.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Computational Biology & AI Research">
+  <meta name="twitter:description" content="$$ \newcommand{\dataset}{{\cal D}} \newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial #2}} \newcommand{\ta}{\vec{\theta}} \newcommand{\fb}{{\bf f}} \newcommand{\norm}[1]{\left\lVert #1\right\rVert} \newcommand{\cb}{\mathbf{C}(\vec{\theta})} \DeclareMathOperator{\Tr}{Tr} $$Asymptotic Properties of the Stochastic Gradient Descent Method Author: Vinod Krishna
+Abstract This paper presents an analysis of the asymptotic and dynamical properties of the minibatch stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD. The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution, with optimal learning parameters corresponding to the minima of the free energy of this distribution. It is shown that the SGD algorithm does not generally converge to the free energy minima of the Boltzmann-Gibbs distribution. A modified SGD algorithm is derived, based on an information geometric interpretation of SGD, that is guaranteed to sample the free energy of the Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface. By accounting for the geometry of the space in which the data is embedded, I derive representation invariant measures of generalization performance. The analysis demonstrates that pure gradient descent methods would remain trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random sampling of minibatches could allow for an escape from local minima to enable complete sampling of loss surfaces with multiple minima. The efficiency of such a sampling is exponential in the minibatch size, and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size grows.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Publications and Notes",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "http://localhost:1313/posts/sgd_asymptotics/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "$$ \\newcommand{\\dataset}{{\\cal D}} \\newcommand{\\fracpartial}[2]{\\frac{\\partial #1}{\\partial #2}} \\newcommand{\\ta}{\\vec{\\theta}} \\newcommand{\\fb}{{\\bf f}} \\newcommand{\\norm}[1]{\\left\\lVert #1\\right\\rVert} \\newcommand{\\cb}{\\mathbf{C}(\\vec{\\theta})} \\DeclareMathOperator{\\Tr}{Tr} $$Asymptotic Properties of the Stochastic Gradient Descent Method Author: Vinod Krishna\nAbstract This paper presents an analysis of the asymptotic and dynamical properties of the minibatch stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD. The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution, with optimal learning parameters corresponding to the minima of the free energy of this distribution. It is shown that the SGD algorithm does not generally converge to the free energy minima of the Boltzmann-Gibbs distribution. A modified SGD algorithm is derived, based on an information geometric interpretation of SGD, that is guaranteed to sample the free energy of the Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface. By accounting for the geometry of the space in which the data is embedded, I derive representation invariant measures of generalization performance. The analysis demonstrates that pure gradient descent methods would remain trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random sampling of minibatches could allow for an escape from local minima to enable complete sampling of loss surfaces with multiple minima. The efficiency of such a sampling is exponential in the minibatch size, and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size grows.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "$$ \\newcommand{\\dataset}{{\\cal D}} \\newcommand{\\fracpartial}[2]{\\frac{\\partial #1}{\\partial #2}} \\newcommand{\\ta}{\\vec{\\theta}} \\newcommand{\\fb}{{\\bf f}} \\newcommand{\\norm}[1]{\\left\\lVert #1\\right\\rVert} \\newcommand{\\cb}{\\mathbf{C}(\\vec{\\theta})} \\DeclareMathOperator{\\Tr}{Tr} $$Asymptotic Properties of the Stochastic Gradient Descent Method Author: Vinod Krishna\nAbstract This paper presents an analysis of the asymptotic and dynamical properties of the minibatch stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD. The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution, with optimal learning parameters corresponding to the minima of the free energy of this distribution. It is shown that the SGD algorithm does not generally converge to the free energy minima of the Boltzmann-Gibbs distribution. A modified SGD algorithm is derived, based on an information geometric interpretation of SGD, that is guaranteed to sample the free energy of the Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface. By accounting for the geometry of the space in which the data is embedded, I derive representation invariant measures of generalization performance. The analysis demonstrates that pure gradient descent methods would remain trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random sampling of minibatches could allow for an escape from local minima to enable complete sampling of loss surfaces with multiple minima. The efficiency of such a sampling is exponential in the minibatch size, and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size grows.\nKeywords: Neural Networks, Stochastic Gradient Descent, Variational Inference\nIntroduction Training machine learning algorithms on data to identify hyperparameters that minimize an error function is a critical task in supervised machine learning. This is a particularly challenging problem for deep networks because of the size of training sets used in deep learning applications, and the number of parameters that require optimization. A key technique central to training deep networks is the stochastic gradient descent (SGD) method, which uses randomly selected samples or mini-batches of samples from the training set to estimate gradients at each learning step. Traditional gradient descent, and its stochastic counterparts have been proven to converge to global minima of convex or nearly convex loss surfaces ([Ref: SGD:Orig, Bouleau:1994, Bottou:2008,Bottou:2010,Recht:2016]).\nHowever, recent work has shown that generally, the loss surfaces of deep neural networks are highly non-convex in character, and have multiple mimina.([Ref: Dauphin:2014,Choromanska:2015]) Consequently, the assumptions of convexity that underlie the mathematical analysis of stochastic gradient descent algorithms no longer apply, and why these algorithms perform efficiently in identifying optimal parameters for these networks is an open question. Intuitively, pure gradient descent could be expected to trap the system parameters at minima of the loss surface that are closest to the initial choice of parameters. On the other hand, stochastic gradient descent methods are potentially more efficient, and can avoid trapping in local minima, since random fluctuations intrinsic to these methods could enable escape from local configurations.\nIn this work, this intuitive argument is used as a starting point and a formalism to analyse the behavior of the stochastic gradient descent method is developed. Earlier, classic analyses of gradient descent methods have mostly examined the convergence properties of individual trajectories in parameter space. However, stochastic gradient descent methods generate random, individual trajectories. Consequently, in the work here, I analyse probability distributions over ensembles of trajectories instead. Furthermore, an analysis of the probability distribution of hyperparameters could provide insights regarding the generalizability and stability properties of learning algorithms with optimal, or nearly optimal hyperparameters. Thus, such probability distributions are the subject of study in this paper.\nResults and Organization of this Paper Broadly this work makes the following contributions:\nDevelops a probabilistic framework and shows the mean error in a machine learning algorithm follows a Boltzmann-Gibbs distribution and optimization of parameters that minimize the average error is equivalent to finding an optimum of the free energy corresponding to this distribution. This is outlined in Section 4. The Gibbs-Boltzmann framework is used to derive representation invariant measures of generalization extending work by [Ref: Hochreiter:1996,Keskar:2017,Dinh:2017] based on geometric arguments. This is outlined in Section 5.3. Shows that the stochastic contribution to stochastic gradient descent has the central limit property, i.e it is approximated by a Gaussian distribution with a state (parameter) dependent covariance matrix. The continuous time evolution of the probability distribution of parameters is shown to be given by a generalized Fokker-Planck equation. The stationary properties of this equation are analysed, and it is shown that SGD does not in general converge to the correct stationary Boltzmann-Gibbs error distribution, and instead results in steady states with a non-zero probability current in parameter space. These results are derived in Sections 5.1 and 5.2. The covariance matrix of the approximately Gaussian noise contribution to SGD is interpreted as a Fisher information matrix. Consequently, the covariance matrix has the properties of a metric in the space of parameters, and this allows for a geometric interpretation of SGD. It is shown that a simple modification of the SGD algorithm, to that of a stochastic natural gradient descent algorithm restores the correct stationary properties of the resulting dynamics. It is shown that this modified dynamics results in a Fokker-Planck equation that has a stationary Boltzmann-Gibbs distribution, and thus the stochastic natural gradient descent is shown to sample the true error distribution, unlike SGD. These results are derived in sections 6 and 7, with the geometric properties of the covariance matrix elaborated in section 6.2. This work thus combines insights from two disparate lines of analysis, to study the stationary properties of the probability distribution over algorithm training parameters, induced by the SGD evolution.\nRelated Work I derive equations that govern the time evolution of the probability distribution of system parameters induced by the training process and analyse the properties of the stationary distribution of the dynamical equations, to understand the sampling and convergence behavior of SGD.\nStochastic Differential Equations [Ref: Mandt:2017] have postulated that the probability distribution over system parameters satisfies an Ornstein-Uhlenbeck process, and have analysed the SGD algorithm in a Bayesian setting, while works by [Ref: Li:2015, Li:2017, Li:2018] have formalized the analysis of SGD by considering their continuum limits as stochastic differential equations. [Ref: Welling:2011] proposed a Langevin dynamics based method that propagated dynamics in parameter space through the addition of an external, Gaussian, noise source. By choosing the noise to be large enough to overcome the intrinsic stochasticity of the SGD method, they were able to demonstrate convergence of their method to a true Bayesian, posterior distribution. More recently, [Ref: Chaudhari:2018] have analysed the SGD method to show that it performs variational inference to minimize an average potential which is not necessary equivalent to the average loss that is used to compute gradients. In this work, I show that this is generally the case, and demonstrate that the steady state distribution of the SGD algorithm does in fact, induce a steady state non zero probability current at the fixed point.\nGeneralizability of Local Minima An important measure of performance for machine learning algorithms is their ability to generalize. Consequently, a considerable body of work is devoted to developing measures of generalization performance for learning algorithms. In recent work, attempts have been made to develop generalization measures based on the structure of the loss surface generated by a learning algorithm. [Ref: Hochreiter:1996] first proposed measures of generalization based on the shape of minima of the loss surface. Work by [Ref: Keskar:2017] built on this insight and proposed that the sharpness of minima dictate the generalization performance of models built from parameters at these minima, and argued that sharp minima generalize poorly. However, [Ref: Dinh:2017] showed through a combination of analysis and computational experiments that by appropriate choice of representation of the parameter space, minima can be made arbitrarily sharp or shallow, thus presenting a challenge to notions of generalization performance based on the geometry of local minima belonging to the loss surface. In this work, I show how these different views can be reconciled by appropriately taking into consideration the underlying geometry governing the loss surface, and develop representation invariant measures of generalization performance.\nNatural Gradients [Ref: Amari:1998] defined the concept of a ``natural gradient\" based on the information geometric view of probability theory and statistics ([Ref: Rao:1945, Amari:2000]). His work has demonstrated that natural gradients in the parameter space of learning algorithms represent directions of steepest descent. [Ref: Pascanu:2014] have described natural gradient descent algorithms to train deep neural networks, while [Ref: Martens:2014] has discussed an interpretation of the natural descent method as a second order optimization technique. Furthermore other works, ([Ref: LeRoux:2008,Ollivier:2015,Grosse:2015,Bernacchia:2018]) have discussed the practical implementation of the natural gradient descent method, and methods to approximate the inverse of Riemannian metrices that need to be computed for its implementation. Here, I show that modifying SGD into a stochastic natural gradient like method ensures convergence of the parameter probability distribution function to the Boltzmann-Gibbs distribution in the limit of long time trajectories.\nStatistical Mechanics in Learning Neural Networks [Ref: Seung:1992] introduced a statistical mechanical framework to study the learning of rules from examples by feedforward neural networks. They showed that when training is stochastic, the networks are governed by a Gibbs distribution, and treated the sampling over training examples to be equivalent to an averaging over quenched disorder in a statistical mechanical setting. Their formulation relies on a substantial body of work involving an analysis of training neural networks (mainly perceptrons) using the statistical mechanics of disordered systems ([Ref: Carnavelli:1987, Gardner:1989,Rau:1993].\nThe current analysis of the SGD method develops a similar framework to derive the true probability distribution of algorithm training parameters (or function implementations), and I argue that a training algorithm must converge to a probability distribution over the set of parameters that is at least approximately equivalent to this true distribution. I however average over the samples (``disorder\"), in the limit of large sample numbers, in order to derive this probability distribution.\nNetwork Training and Free Energy Minimization The problem that learning algorithms attempt to solve can be defined as follows. Given a set of “training” data, $\\{s_{i}\\}_{i=1}^{n} = \\{x_{i},y_{i}\\}_{i=1}^{n} \\in \\mathrm{D}$ and a space of functions, $\\mathcal{F}$, learning algorithms attempt to find a function $f^* \\in \\mathcal{F}$ that satisfies: $$ f^{*} \\leftarrow \\arg \\min_{f \\in \\mathcal{F}} \\frac{1}{n}\\sum_{s \\in \\mathrm{D}}^{n}{\\mathcal{\\varepsilon}(s\\mid f)} $$Define an empirical average error over $N$ samples as $$ \\mathrm{E}_{N}(f) =: \\frac{1}{N}\\sum_{i=1}^{N}{\\varepsilon(s_{i}\\mid f)}. $$ Intuitively, this is the mean loss incurred by $N$ samples according to the loss function $\\varepsilon(s\\vert f)$ and input-output function $f(x(s))$. Furthermore, I assume that the average loss converges to a fixed value as the number of samples being averaged over increases, i.e $$ \\mathrm{E}(f) =: \\lim_{N\\rightarrow\\infty} \\mathrm{E}_{N}(f) $$ I adopt a standard argument that is used to describe the origins of the Boltzmann distribution in statistical mechanics, to derive the statistics of the average error, $\\mathrm{E}_{N}(f)$ as $N \\rightarrow \\infty$. A more general setting in which such statistics can be described is to be found in the theory of large deviations ([Ref: Varadhan:2008, Ellis:2008, Touchette:2009]). For completeness, I outline such a large deviations based approach in Appendix A.\nFor a large number, $N$, of samples, the probability distribution of states with an average error, $\\mathrm{E}_{N}(f)$ can be estimated using a combinatorial argument. Consider a choice of $\\{m_{1},m_{2},..,m_{l}\\}$ samples, $\\{s_1 , s_2, ..s_{l}\\}$ with corresponding errors, $\\{\\varepsilon(s_{1}\\mid f),\\varepsilon(s_{2}\\mid f),...\\}$. The probability of choosing $N = \\sum_{k}{m_k}$ samples such that their average energy is $\\mathrm{E}_{N}(f)$ is given by summing over a multinomial distribution as\n$$\nP\\left(E = \\mathrm{E}{N}(f)\\right) = \\sum{\\sum_{k}{\\frac{m_{k}}{N}\\varepsilon_{k} = \\mathrm{E}{n}(f)}}{\\frac{N!}{m{1}! m_{2}!..m_{l}!}\\prod_{k=1}^{l}{q(s_{k})^{m_{k}}}}.\n$$\nHere, the probabilities $q(s_k)$ are the sample data probabilities, assuming each sample can be chosen independently. For large $N$, the summation in Eq.(combin) has as its dominant contribution, terms that grow exponentially with $N$. Such contributions can be estimated by using Stirling’s approximation to the factorial function, and retaining the maximal contribution: $$\nP(E) \\approx \\max_{m_1,m_2,..}{C_{N}\\frac{N^N}{m_{1}^{m_1 } m_{2}^{m_2 }…m_{l}^{m_l }}\\prod_{k=1}^{l}{q(s_{k})^{m_k}}}.\n$$\nHere, $C_{N}$ is a term that is proportional to $\\sqrt{N}$, and hence grows much more slowly than the rest of the contributions, hence it can be ignored in the estimation of the maximal contribution. Furthermore, the maximization in Eq.(combin1) is performed with the constraints:\n$$\n\\sum_{k=1}^{l}{m_{k}} = N ; \\text{and}; \\sum_{k=1}^{l}{m_{k}\\varepsilon(s_{k}\\mid f)} = N\\mathrm{E}_{N}(f)\n$$\nBy defining the probabilities, $p_{k} \\equiv \\frac{m_k}{N} \\equiv p(s_{k}\\vert f)$, Eq.(combin1) becomes\n$$\nP(E) \\approx C_{N}\\max_{p_{1},p_{2},..}{\\exp\\left[-N\\sum_{k}{p_{k}\\log\\left(\\frac{p_{k}}{q_{k}}\\right)}\\right]}; \\text{subject to} ; \\sum_{k=1}^{l}{p_{k}\\varepsilon(s_{k}\\mid f)} = \\mathrm{E}_{N}(f).\n$$\nThe exponent in Eq.(combin2) is $N$ times the relative, or Kullback-Leibler, entropy $D(p\\vert\\vert q)$. Thus, the optimal probabilities, $p_{k}$ satisfy\n$$\np^{*}{k} = \\arg \\max{{p_{1},..p_{l}}} \\left{ D(p\\mid\\mid q) + \\beta\\left( \\sum_{k}{p_{k}\\varepsilon(s_{k}\\mid f)} - \\mathrm{E}_{N}(f) \\right)\\right}.\n$$\nHere, $\\beta$ is a Lagrange multiplier. Upon solving Eq.(lagrange), the optimal probabilities are\n$$\np(s\\mid f) = \\frac{q(s)e^{-\\beta\\varepsilon(s \\mid f)}}{\\sum_{s}{q(s)e^{-\\beta\\varepsilon(s \\mid f)}}}.\n$$\nThe partition function is defined to be $\\mathcal{Z}(f) \\equiv \\sum_{s}{q(s)e^{-\\beta\\varepsilon(s\\mid f)}}$.\nEq.(combin4) defines the conditional probability over samples $s$ given a realization of the algorithm, $f$. This conditional probability can also be rewritten in terms of the partition function as $p(s\\vert f) = \\mathcal{Z}^{-1}(f)\\exp(-\\beta\\varepsilon(s\\vert f))$. From Eq.(combin2), the average error is seen to be\n$$\n\\mathrm{E}{N}(f) = \\bar{E} \\equiv \\left\\langle\\varepsilon(s\\mid f)\\right\\rangle{s} = \\sum_{s}{p(s\\vert f)\\varepsilon(s\\mid f)}.\n$$\nThe thermodynamic entropy corresponding to the partition function $\\mathcal{Z}(f)$ is\n$$\nS(\\bar{E};f) = \\beta\\left(\\bar{E} + \\frac{1}{\\beta}\\log\\mathcal{Z}(f)\\right).\n$$\nSubstitution of Eqs.(combin4) and (entropy) into Eq.(combin2) shows that the probability distribution of the average error satisfies an exponential distribution\n$$\nP\\left(E = \\mathrm{E}_{N}(f)\\right) \\sim \\exp\\left[NS(E;f)\\right].\n$$\nThus, as expected, as the number of samples being averaged over become large, the empirical mean error converges to the average upon infinite sampling, and fluctuations away from this average are exponentially damped out in comparison.\nFinally, since it is interest to understand how training a machine learning algorithm propagates the average error in the space, $\\mathcal{F}$ of functions that the algorithm can be optimized over, I estimate the equilibrium distribution, $\\Sigma(f)$, over the space of functions. Since the distribution $p(s\\mid f)$ is conditional to the function, $f$, the following condition applies:\n$$\n\\sum_{\\substack{s\\in\\mathrm{D}\\ f\\in\\mathcal{F}}}{p(s\\mid f)\\Sigma(f)} = 1.\n$$\nBy inspection of Eq.(combin4), Eq.(norm) is satisfied by the choice:\n$$\n\\Sigma(f) = \\frac{\\mathcal{Z}(f)}{\\sum_{\\substack{f\\in\\mathcal{F}}}{\\mathcal{Z}(f)}} $$\nRewrite $\\mathcal{Z}_{0} \\equiv \\sum_{f\\in\\mathrm{F}}{\\mathcal{Z}(f)}$ and define a free energy:\n$$\n\\mathcal{G}(f) = -\\frac{1}{\\beta}\\log\\mathcal{Z}(f) = -\\frac{1}{\\beta}\\log\\left[\\sum_{s\\in\\mathrm{D}}{q(s)e^{-\\beta\\varepsilon(s\\mid f)}}\\right].\n$$\nThen, $\\Sigma(f)$ has the form of a Boltzmann distribution over the space of functions:\n$$\n\\Sigma(f) = \\mathcal{Z}_{0}^{-1}\\exp\\left[-\\beta\\mathcal{G}(f)\\right].\n$$\nThe form, Eq.(boltz1), of the probability distribution implies that a function, $f^*$, that satisfies the condition, Eq.(condition), equivalently minimizes the free energy, $\\mathcal{G}(f)$:\n$$\nf^* = \\arg \\max_{f} \\Sigma(f) ; \\text{or equivalently}; f^* = \\arg\\min_{f}\\mathcal{G}(f)\n$$\nIn general the probability distribution over the space of possible functions is a Boltzmann distribution (Eqs.(boltz) and (freeE)). Consequently, methods that train a learning algorithm, correspond to a sampling of a Boltzmann-Gibbs distribution over the space, $\\mathcal{F}$, of possible functions. Thus a strong condition for a successful training method is that the probability induced by this sampling process should converge to the distribution, $\\Sigma(f)$. Alternatively, a weaker condition is that the maximal values of the probability distribution induced by the training process should coincide with the minima of the free energy, $\\mathcal{G}(f)$.\nThe Stochastic Gradient Descent Algorithm For loss surfaces that are purely concave, it has been proven that gradient descent methods converge exactly to parameter values that minimize the empirical error. However, deep learning algorithms typically generate loss surfaces that are ``rugged’’ in the space of network parameters, and contain multiple minimal points ([Ref: Dauphin:2014,Choromanska:2015]). Training such methods using stochastic, minibatch gradient descent methods has proven to be successful in reaching parameter values that successfully minimize the loss function, to the extent that these algorithms generalize. Consequently, minibatch gradient descent methods are among the most commonly used methods to train deep networks. Here, I analyse the minibatch gradient descent method in this context.\nThe analysis I present in this paper applies to loss functions that are at least twice differentiable, i.e have second partial derivatives that all exist.\nTime Evolution of probability distributions under SGD Consider a deep network with network parameters, $\\vec{\\theta}$ and a training set of $N$ samples, $\\mathcal{S}_N \\equiv \\{s_{1},s_2,s_3, ..s_N\\}$. Generally, the number of training samples $N$ for such networks is large, ranging from thousands to millions. Let $\\varepsilon(s\\vert\\ta)$ be the loss incurred by a sample $s$ for a given set of network parameters, $\\vec{\\theta}$. In stochastic minibatch gradient descent, a subset of samples $\\mathcal{S}_{m}$ of size $\\mid\\mathcal{S}_{m}\\mid \\equiv m$ is randomly chosen, such that $N\\gg m$. Following this, the average error over these samples, $$ E\\left(\\mathcal{S}_{m} \\mid \\ta\\ \\right) \\equiv \\frac{1}{m}\\sum_{s_\\alpha \\in \\mathcal{S}_m}{\\varepsilon\\left(s_{\\alpha} \\mid \\ta\\ \\right)}, $$ is estimated. The minibatch gradient descent update for network parameters at learning step $t$, $\\vec{\\theta}_{t}$ and a learning rate, $\\eta_{t}$, is then $$\n\\ta_{t+1} = \\ta_{t} - \\eta_{t}\\nabla_{\\ta}E(\\mathcal{S}_{m}\\mid\\ta_t). $$ The random selection of a finite minibatch of samples, $\\mathcal{S}_{m}$ introduces a random component into the dynamics defined by Eq.(sgd), thus individual learning trajectories in parameter space are stochastic. Consequently, to understand the behavior of the network during training, I consider the time evolution of probability distributions over parameter space. That is, if $\\fb(\\ta_{t};\\mathcal{S}_m) \\equiv -\\nabla_{\\ta}E(\\mathcal{S}_{m}\\mid\\ta_t)$ is defined as the ``force'' acting on the state defined by parameters, $\\vec{\\theta}_t$, and the data probability distribution of samples is $Q(\\mathcal{S}_{m})$, the probability, $K(\\vec{\\theta}_{t+1}\\mid\\vec{\\theta}_{t};\\eta_{t})$ of obtaining a parameter set $\\ta_{t+1}$ at time $t+1$ given parameters $\\vec{\\theta}_{t}$, at time $t$ is $$K(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = \\sum_{\\bf f}{\\delta\\left(\\vec{\\theta}{t+1} - \\vec{\\theta}{t} - \\mathbf{\\Delta}({\\bf f},\\eta_{t})\\right)P\\left({\\bf f}\\middle|\\vec{\\theta}_{t}\\right)}. $$ Here, I have treated the force, ${\\bf f}(\\vec{\\theta}_{t};\\mathcal{S}_m)$ as a random variable given by a probability distribution, $P\\big({\\mathbf f}\\mid\\vec{\\theta}_{t}\\big)$. Treating the force as a random variable is justified, since in the minibatch method, a subset of samples $\\mathcal{S}_m$ are randomly sampled, and the force is estimated from these samples. The total change due to this force over the time interval, $\\eta_{t}$, is written as $\\mathbf{\\Delta}({\\bf f},\\eta_{t})$. Generally, if the force, ${\\bf f}$ is not a random variable, $\\mathbf{\\Delta}({\\bf f},\\eta_{t}) \\approx \\eta_{t}{\\bf f}$. However, for a random force, $\\mathbf{\\Delta}({\\bf f},\\eta_t)$ is also a random variable.\nThus, in order to estimate the transition probability, $K$ in Eq.(trs), the probability, $P({\\bf f}\\vert\\vec{\\theta}_{t})$, and consequently the distribution of $\\mathbf{\\Delta}$ need to be estimated. I derive the distribution of $\\mathbf{\\Delta}$ in Appendix B.\nThe probability distribution, $P({\\bf f}\\mid\\vec{\\theta}_{t})$, is defined as $$\nP\\left({\\bf f} \\mid \\vec{\\theta}{t}\\right) \\equiv \\sum{\\mathcal{S}m}{\\delta\\left({\\bf f} + \\nabla{\\theta}E(\\mathcal{S}_{m}\\mid\\vec{\\theta}t)\\right)Q(\\mathcal{S}{m})}. $$ In order to simplify Eq.(clta), the $\\delta$-function is written in terms of its Fourier representation: $$P\\left({\\bf f} \\mid \\vec{\\theta}{t}\\right) = \\int{\\frac{d{\\bf k}}{(2\\pi)^{d}}; Q(\\mathcal{S}{m})\\exp\\left[i{\\bf k}\\cdot\\left({\\bf f} - \\frac{1}{m}\\sum_{s_{a} \\in\\mathcal{S}{m}}{{\\bf f}\\left(\\vec{\\theta}{t};s_{a}\\right)}\\right)\\right]} $$ Since samples are assumed to be chosen independently of each other, $Q(\\mathcal{S}_{m}) \\equiv \\prod_{s_{a}\\in\\mathcal{S}_{m}}{q(s_{a})}$. Define the characteristic function corresponding to the sample distribution as $$\\pi({\\bf k}\\mid\\vec{\\theta}) = -\\log\\sum_{s}{q(s)\\exp\\left{-i{\\bf k}\\cdot{\\bf f}(\\vec{\\theta};s)\\right}}. $$ Combining Eqs.(cltb) and (cltc) results in the following relation: $$P\\left({\\bf f}\\mid\\vec{\\theta}\\right) = \\frac{m}{(2\\pi)^{d}}\\int{d{\\bf p}; \\exp\\left{m\\left[{i\\bf p}\\cdot{\\bf f} - \\pi({\\bf p}\\mid\\vec{\\theta})\\right]\\right}} $$ The characteristic function $\\pi({\\bf p}\\mid\\vec{\\theta})$ can be written in the form of a cumulant expansion: $$\\pi({\\bf p}\\mid\\vec{\\theta}) = -i{\\bf p}\\cdot{\\bf f}(\\vec{\\theta}) + \\frac{1}{2}{\\bf p}\\cdot\\mathbf{C}(\\vec{\\theta})\\cdot{\\bf p} + …. $$ Here, I have truncated the cumulant expansion to second order in ${\\bf p}$, since the higher order terms are expected to make small contributions. I have also ignored the zeroth order contribution, since it is $1$ and constant. The first and second cumulants are defined as $${\\bf f}(\\vec{\\theta}) \\equiv \\langle{\\bf f}(\\vec{\\theta};s)\\rangle_{s}, ;;; \\mathbf{C}(\\vec{\\theta}) \\equiv \\langle{\\bf f}(\\vec{\\theta};s)\\circ {\\bf f}(\\vec{\\theta};s)\\rangle_{s} - {\\bf f}(\\vec{\\theta})\\circ{\\bf f}(\\vec{\\theta}). $$ Here, the operator $\\circ$ corresponds to elementwise multiplication, i.e $\\left(\\mathbf{u}\\circ\\mathbf{v}\\right)_{ij} =\\mathbf{u}_{i}\\mathbf{v}_{j}$. In words, the first order cumulant is the ``force'' (or negative gradient of the loss function) averaged over the sample distribution function and the second cumulant is the covariance tensor constructed from the gradient of the loss function with respect to the sample distribution function $q(s)$. This average force can also be written as the gradient of the free energy, or potential of mean force, as defined in Eq.(freeE): $$\\mathbf{f}(\\ta) = -\\left\\langle\\nabla_{\\theta}\\varepsilon (s\\mid\\ta)\\right\\rangle_{s} = -\\nabla_{\\theta}\\mathcal{G}(\\ta) $$\nSubstitution of the truncated cumulant expansion, Eq.(clte) into Eq.(cltd) and integrating out the variables ${\\bf p}$ shows that the random variables ${\\bf f}$ obey the central limit theorem, with covariance matrices that depend on the state parameters $\\vec{\\theta}$: $$\nP\\left({\\bf f} \\mid \\vec{\\theta}\\right) = B_{m}(\\vec{\\theta})\\exp\\left{-\\frac{m}{2}\\left({\\bf f} - {\\bf f}(\\vec{\\theta})\\right)\\cdot\\mathbf{C}^{-1} (\\vec{\\theta})\\cdot\\left({\\bf f} - {\\bf f}(\\vec{\\theta})\\right)\\right} $$ Here, $B_{m}$ is a normalization constant. I derive the probability distribution of $\\mathbf{\\Delta}$ in Appendix B. On combining the distribution of $\\mathbf{\\Delta}$ with the the probability distribution in Eq.(cltf), I derive a closed form expression for the transition probability distribution $K(\\vec{\\theta}_{t+1}\\mid\\vec{\\theta}_{t};\\eta_{t})$ to be $$K(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = \\frac{B_m}{\\eta_{t}}\\int{d{\\bf p}\\exp\\left[i{\\bf p}\\cdot\\left(\\frac{\\vec{\\theta}{t+1} - \\vec{\\theta}{t} }{\\eta_{t}} - {\\bf f}(\\vec{\\theta}_t)\\right)\n\\frac{1}{2m\\eta_{t}}{\\bf p}\\cdot\\mathbf{C}(\\vec{\\theta}_{t})\\cdot{\\bf p}\\right]}. $$ Integrating out ${\\bf p}$ in Eq.(cltg), the propagator at short time intervals,$\\eta_t$, and approximating $\\dot{\\ta}_{t} \\equiv \\frac{1}{\\eta_{t}} \\left(\\ta_{t+1} - \\ta_{t}\\right)$, the short time propagator has the form: $$ K(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = \\frac{B_{0}}{\\eta_{t}}e^{-\\eta_{t}\\mathrm{L}(\\dot{\\ta}_{t};\\ta_t)}. $$ The exponent, $\\mathrm{L}$, has the form $$\\mathrm{L}(\\dot{\\ta}{t},\\ta_t) \\equiv \\frac{m}{2}\\left(\\frac{\\ta{t+1} - \\ta_t}{\\eta_t} - \\mathbf{f}(\\ta_t)\\right)\\cdot\\mathbf{C}^{-1}(\\ta_{t})\\cdot\\left(\\frac{\\ta_{t+1} - \\ta_t}{\\eta_t} - \\mathbf{f}(\\ta_t)\\right). $$ From Eq.(fp2), the propagator $K(\\vec{\\theta}_{t+1}\\mid\\vec{\\theta}_{t};\\eta_{t})$ has maximal contributions from the path, $\\dot{\\ta}_{t} = \\mathbf{f}(\\ta_{t})$, which corresponds to the method of gradient descent. However, other paths are also probable, albeit with reduced probability. Thus, the stochasticity of the minibatch SGD method, allows for lower probability events that could potentially enable the escape of the system from regions of local minima in parameter space.\nThe likelihood of such events is also controlled by the covariance matrix, $\\mathbf{C}$. If this matrix has large eigenvalues, then the propagator is ``flattened\" out, allowing for a greater range of fluctuations in the force, $\\fb$ relative to its mean, $\\fb(\\ta_{t})$, thus enabling trajectories other than the gradient descent trajectory to also have significant probability. However, small values of this matrix result in a sharply peaked distribution about the gradient descent trajectory, and other trajectories are relatively disfavored. Hence, the strength of the covariance matrix plays a critical role in controlling the training timescales over which regions of parameter space can be accessed. Consequently, a smaller variance in the force requires longer training times and vice versa.\nEqs.(fp1) and (fp2) also make clear the role of the mini-batch size $m$. As $m \\rightarrow \\infty$ fluctuations away from the gradient descent trajectory are dampened, reducing the probability of escape once the learning process is trapped in a local minima of parameters. Hence, in addition to the practical considerations of efficiency involved in choosing minibatch SGD over a gradient descent estimated over all training samples, the choice of smaller mini-batches also enhances the sampling process in a loss surface with multiple minima.\nEquilibrium and Steady State Properties of SGD If $\\sigma(\\vec{\\theta},t)$ is the probability distribution function of the parameters, $\\vec{\\theta}$ at time $t$, in the microscopic limit as $\\eta_{t} \\rightarrow 0$, I show in Appendix C that Eq.(cltg) can be transformed into an evolution equation for the probability distribution, and a Fokker-Planck equation is obtained as below: $$\n\\frac{\\partial}{\\partial t}\\sigma(\\vec{\\theta},t) = - \\frac{\\partial}{\\partial\\vec{\\theta}}\\cdot\\left({\\bf f}(\\vec{\\theta})\\sigma\\right) + \\frac{1}{2m}\\frac{\\partial}{\\partial\\vec{\\theta}}\\cdot\\mathbf{C}(\\vec{\\theta})\\cdot\\frac{\\partial}{\\partial\\vec{\\theta}};\\sigma(\\vec{\\theta},t). $$ Since the steady state properties of the probability distribution function $\\sigma(\\vec{\\theta},t)$ are of interest, a standard approach to analyse steady state solutions of Eq.(fp) is to define a current: $${\\bf J} \\equiv {\\bf f}(\\vec{\\theta})\\sigma - \\frac{1}{2m}\\mathbf{C}(\\vec{\\theta})\\cdot\\boldsymbol{\\nabla}\\sigma . $$ With the definition, Eq.(fp1), the Fokker-Planck equation, (fp) becomes a continuity equation: $$\\frac{\\partial\\sigma}{\\partial t} = - \\boldsymbol{\\nabla}\\cdot{\\bf J}(\\vec{\\theta},t). $$ Thus, a steady state probability distribution, $\\sigma_{0}(\\vec{\\theta})$ should satisfy $\\nabla\\cdot{\\bf J} = 0$. This condition is satisfied if either ${\\bf J} = 0$ or ${\\bf J} = \\nabla\\times\\mathrm{F}$, where $\\mathrm{F}$ is some vector field. I first examine the existence of steady states given by the first condition, ${\\bf J} = 0$, which I refer to as the ``equilibrium\" condition. Let $\\sigma_{e}$ represent such an equilibrium probability distribution. Then the equilibrium condition, ${\\bf J} = 0$ translates to the equation: $${\\bf f}(\\vec{\\theta}) = \\frac{1}{2m}\\mathbf{C}(\\vec{\\theta})\\cdot\\boldsymbol{\\nabla}\\ln\\sigma_{e}(\\ta). $$ Given that ${\\bf f}(\\vec{\\theta}) \\equiv -\\nabla\\mathcal{G}(\\vec{\\theta})$, Eq.(ss) can be recast in the form $$-\\boldsymbol{\\nabla}\\mathcal{G}(\\vec{\\theta}) = \\frac{1}{2m}\\mathbf{C}(\\ta)\\cdot\\boldsymbol{\\nabla}\\ln\\sigma_{e}(\\ta). $$ Eq.(ss0) shows that unless the covariance tensor, $\\mathbf{C}$ is constant, i.e $\\mathbf{C}(\\ta) = \\mathbf{C}_{0}$, there is no equilibrium distribution $\\sigma_{e}$ that satisfies the condition ${\\bf J} = 0$. This becomes clear upon integrating both sides of Eq.(ss0). By the properties of the gradient operator, the line integral of the right hand side between initial and final points, $\\{\\ta_{i},\\ta_{f}\\}$ is evaluated to be $$ \\oint_{\\mathcal{C}}{\\boldsymbol{\\nabla}\\mathcal{G}\\cdot d\\ta} = G(\\ta_{f}) - G(\\ta_{i}). $$ This line integral is independent of the specific curve $\\mathcal{C}$ that is chosen, and instead solely is a function of the initial and final points,$\\{\\ta_{i},\\ta_{f}\\}$, that $\\mathcal{C}$ traverses between. On the other hand, for non-constant $\\mathbf{C}(\\ta)$, the corresponding line integral of the left side of Eq.(ss0) is $$ \\oint_{\\mathcal{C}}{d\\ta\\cdot\\mathbf{C}(\\ta)\\cdot\\boldsymbol{\\nabla}\\ln\\sigma_{e}} = \\mathrm{I}(\\mathcal{C}). $$ This integral is generally a function of the entire path $\\mathcal{C}$. Hence, Eq.(ss0) cannot be satisfied by any choice of densities, $\\sigma_{e}(\\ta)$ unless $\\mathbf{C}(\\ta)$ is a constant. Consequently, the true probability distribution, $\\Sigma(\\ta)$, of the loss function cannot in general be an equilibrium distribution of the Fokker-Planck equation, Eqs.(fp) and (ss0).\nThe weaker condition that a steady state distribution of Eq.(cont) satisfies is that the probability current is the curl of a vector field, i.e $\\mathbf{J}_{s}(\\ta) = \\boldsymbol{\\nabla}\\times\\mathrm{F}$. However, it can be shown, through simple substitution, that the Boltzmann distribution, Eq.(boltz1) is not a stationary distribution of Eq.(fp) either, and no function, $\\mathrm{F}$ exists such that $\\mathbf{J}_{s}(\\ta) = \\boldsymbol{\\nabla}\\times\\mathrm{F}$ satisfies Eq.(fp3) for a choice of $\\sigma$, as the Boltzmann distribution, $\\Sigma(\\ta)$. Hence, for general covariances, $\\mathbf{C}(\\ta)$, the SGD method does not converge to the minima of the free energy of the loss distribution and the probability distribution of parameters generated by the minibatch SGD method does not converge to the true Boltzmann distribution, $\\Sigma(\\ta)$.\nI show that the conclusions regarding the lack of convergence of SGD to a stationary Boltzmann-Gibbs distribution also apply to SGD methods with momentum in Appendix D. In addition, the probability distribution induced by momentum-SGD also satisfies a generalized Fokker-Planck time evolution as shown in Appendix D.\nLocal Minima and SGD Building on insights of [Ref: Hochreiter:1996] regarding the shape of minima of the loss surface, [Ref: Keskar:2017] have argued that SGD algorithms that use large-batch training sets often result in parameters that correspond to sharp minima that generalize poorly. I use the formalism developed here to analyse the generalization properties of SGD.\nFrom the discussion of pure gradient descent, and the property that the transition probability, Eq.(fp1), becomes concentrated around the gradient descent trajectory in the limit of infinite mini-batch size, $m \\rightarrow\\infty$, it is clear that gradient descent from a given set of initial parameters, $\\ta(0)$ results in parameters corresponding to a nearby local minimum. This insight ([Ref: Stillinger:1983, Stillinger:1984]) was first developed to approximate the partition function of glassy systems. I adapt the formalism of [Ref: Stillinger:1983] to understand the properties of local minima attained by the SGD method in the large batch limit.\nFollowing [Ref: Stillinger:1983], the space $\\mathcal{F}_{\\ta}$ of parameters can be divided into equivalence classes according to the minima that gradient descent trajectories lead to. In particular, define: $$\n\\Theta_{\\alpha} \\equiv \\left{\\ta\\mid \\ta = \\ta(0) ; ; \\dot{\\ta}(t) = \\mathbf{f}[\\ta(t)]; ; \\lim_{t\\rightarrow\\infty}{\\ta(t)} = \\ta_{\\alpha}\\right} $$ Here, $\\ta_{\\alpha}$ are local minima reached by the gradient descent trajectory that are ``nearest'' to the initial conditions, $\\ta$. Thus, the space of parameters is written as a union of equivalence classes over all minima, $\\ta_{\\alpha}$, i.e, $$\\mathcal{F}{\\ta} = \\bigcup\\limits{\\alpha}^{} {\\Theta_{\\alpha}} $$ Based on the grouping into equivalence classes, the partition function, $\\mathcal{Z}_{0}$ is rewritten as: $$\\mathcal{Z}{0} = \\sum{\\alpha}{e^{-\\beta\\mathcal{G}(\\ta_{\\alpha})}\\sum_{\\ta\\in\\Theta_{\\alpha}}{e^{-\\beta\\Delta\\mathcal{G}(\\ta;\\ta_{\\alpha})}}} $$ Here, $\\Delta\\mathcal{G}(\\ta ;\\ta_{\\alpha}) \\equiv \\mathcal{G}(\\ta) - \\mathcal{G}(\\ta_{\\alpha})$. We define: $$\\Omega(\\ta_{\\alpha}) \\equiv \\sum_{\\ta\\in\\Theta_{\\alpha}}{e^{-\\beta\\Delta\\mathcal{G}(\\ta;\\ta_{\\alpha})}} $$ $\\Omega$ can be interpreted as the effective number of states present in each equivalence class, or alternately as the effective ``volume'' of the equivalence class, $\\Theta_{\\alpha}$. The volume or size of each equivalence class is a measure of generalization of models parameterized by the corresponding minima. The equilibrium probability of parameters belonging to a given equivalence class, $\\Theta_\\alpha$ is: $$ p(\\Theta_{\\alpha}) = \\frac{1}{\\mathcal{Z}{0}}\\Omega(\\ta{\\alpha})e^{-\\beta\\mathcal{G}_{\\alpha}} $$ Thus, if the index of the equivalence class corresponding to the minimum free energy is $\\alpha = 0$, the relative equilibrium probability of belonging to an equivalence class, $\\alpha$ to that of the minimal free energy is: $$\\frac{p(\\Theta_{\\alpha})}{p(\\Theta_0)} = \\frac{\\Omega_{\\alpha}}{\\Omega_0}e^{-\\beta\\Delta\\mathcal{G}(\\ta_\\alpha; \\ta_0)} $$ The relative probability consists of two contributions, one the relative sizes of each equivalence class, as defined as the ratios of $\\Omega$, and the second is the free energy difference, (i.e relative ``heights’’) of the local minima and the minimal free energy state.\nThe effective number of states $\\Omega_{\\alpha}$ is approximated by a harmonic approximation around the local minimum, i.e: $$\n\\Delta\\mathcal{G}(\\ta ; \\ta_{\\alpha}) \\approx \\frac{1}{2}\\left(\\ta - \\ta_{\\alpha}\\right)\\cdot\\mathbf{\\nabla}^{2}\\mathcal{G}(\\ta_{\\alpha})\\cdot\\left(\\ta - \\ta_\\alpha\\right) $$ Here, $\\mathbf{\\nabla}^{2}\\mathcal{G}(\\ta_\\alpha)$ is the Hessian matrix of the free energy, $\\mathcal{G}$ evaluated at the local minimum, $\\ta_\\alpha$. With this approximation, we obtain the volume of the equivalence class as: $$\\log\\Omega_{\\alpha} \\approx \\frac{d}{2}\\log\\left(\\frac{2\\pi}{\\beta}\\right) - \\frac{1}{2}\\log\\det\\mathbf{\\nabla}^{2}\\mathcal{G}(\\ta_\\alpha) $$ Eq.(equiv5) shows that the volume of an equivalence class, and thus the generalizability of models with parameters drawn from or near the minima of such an equivalence class depends on the determinant of the Hessian of the free energy at the minimum. At a minimum, this determinant measures the curvature of the free energy surface. Thus, for sharp minima, this determinant is large, and the effective volume of the equivalence class is correspondingly small, and so such a minimum shows poorer generalization than a shallower minimum.\nHowever, [Ref: Dinh:2017] have shown that a loss surface can be transformed through an appropriate nonlinear transformation of the parameters, $\\ta$, such that minima can be made either sharp'' or shallow’’, i.e the generalization measures based on ``sharpness’’ of minima are not representation invariant. Although, intuitively, the relative sizes of the equivalence classes as defined in Eq.(equiv3) could be considered as measures of generalization, the quantities defined by Eqs.(equiv3) and (equiv5) are similarly not invariant under a transformation of parameters. As noted by [Ref: Dinh:2017], the lack of representation invariance is because current measures of generalization do not account for the intrinsic geometry of the loss surface, and implicitly assume a cartesian geometry.\nHere, in order to account for this intrinsic geometry, I first define the summation, Eq.(summation). Let $\\mathbf{g}(\\ta)$ be the metric induced by the data. Then, Eq.(summation) can be written as: $$\n\\mathcal{Z}{0} = \\sum{\\alpha}{e^{-\\beta\\mathcal{G}(\\ta_\\alpha)}\\int_{\\Theta_{\\alpha}}{\\sqrt{\\mid\\mathbf{g}(\\ta)\\mid}\\prod_{k=1}^{d}{d\\ta_{k}}; e^{-\\beta\\Delta\\mathcal{G}(\\ta;\\ta_\\alpha)}}} $$ $\\vert\\mathbf{g}(\\ta)\\vert$ is the determinant of the metric, $\\mathbf{g}$, and the volume form, $\\sqrt{\\mid\\mathbf{g}(\\ta)\\mid}\\prod_{k=1}^{d}{d\\ta_{k}}$ is invariant under bijections, $\\vec{\\nu}(\\vec{\\eta}) = \\ta$. In addition, define the coordinate transformation matrices: $$ \\mathbf{T}(\\vec{\\eta}) \\equiv \\nabla_{\\eta}\\nu = \\nabla_{\\eta}\\ta; \\text{and}; \\mathbf{T}^{-1}(\\vec{\\eta}) = \\nabla_{\\ta}\\vec{\\eta} = \\nabla_{\\nu}\\vec{\\eta}. $$ The second derivative of $\\mathcal{G}$ transforms as: $$ \\nabla^{2}\\mathcal{G}(\\ta) = \\mathbf{T}(\\vec{\\eta})\\cdot\\mathbf{\\nabla}^{2}{\\eta}\\mathcal{G}[\\vec{\\nu}(\\vec{\\eta})]\\cdot\\mathbf{T}(\\vec{\\eta}) $$ Using a Taylor series approximation to first order, the difference $\\ta - \\ta_{\\alpha} \\equiv \\vec{\\nu}(\\vec{\\eta}) - \\vec{\\nu}(\\vec{\\eta}_\\alpha)$ transforms as $$ \\vec{\\nu}(\\vec{\\eta}) - \\vec{\\nu}(\\vec{\\eta}\\alpha) \\approx \\left(\\vec{\\eta} - \\vec{\\eta}{\\alpha}\\right)\\cdot\\mathbf{T}^{-1}(\\vec{\\eta}{\\alpha}). $$ Thus, upon a change of representation, the coordinate transformation matrices cancel each other out and Eq.(equiv4) becomes: $$ \\Delta\\mathcal{G}(\\nu(\\vec{\\eta}) ; \\nu(\\vec{\\eta}{\\alpha})) \\approx \\frac{1}{2}\\left(\\vec{\\nu} - \\vec{\\nu}{\\alpha}\\right)\\cdot\\nabla^{2}\\mathcal{G}(\\vec{\\eta}{\\alpha})\\cdot\\left(\\vec{\\nu} - \\vec{\\nu}{\\alpha}\\right) $$ I.e the quadratic approximation, Eq.(equiv4) retains representation invariance.\nThe definition, Eq.(rie), and the quadratic approximation suggest that a reparametrization invariant measure of generalization is $$\n\\tilde{\\Omega}{\\alpha} \\equiv \\int{\\sqrt{\\mid\\mathbf{g}(\\ta)\\mid}\\prod{k=1}^{d}{d\\ta_{k}}; \\exp\\left(-\\frac{\\beta}{2}\\left(\\ta - \\ta_{\\alpha}\\right)\\cdot\\mathbf{\\nabla}^{2}\\mathcal{G}(\\ta_{\\alpha})\\cdot\\left(\\ta - \\ta_\\alpha\\right)\\right)} $$ The discussion so far is valid for an arbitrarily specified metric, $\\mathbf{g}$. However, since each value of $\\ta$ corresponds to a particular choice of probability distribution over the data, $p(s,\\ta)$, the space of parameters corresponds to the space of probability distributions, and thus the metric, $\\mathbf{g}(\\ta)$, describes a distance between probability distributions. From this argument, $\\mathbf{g}(\\ta)$ is equivalent to the Fisher information metric: $$ \\mathbf{g}(\\ta) = \\mathcal{I}{p}(\\ta) \\equiv \\sum{s}{p(s\\mid\\ta)\\nabla\\log p(s\\mid\\ta)\\circ\\nabla\\log p(s\\mid\\ta)}. $$ Here, the probability, $p(s\\mid\\ta)$ is as defined by Eq.(combin4), with $f$ replaced by $\\ta$, i.e $$ p(s\\mid\\ta) = \\frac{1}{\\mathcal{Z}(\\ta)}q(s)e^{-\\beta\\varepsilon(s\\mid\\ta)}. $$ The choice, $\\mathbf{g} = \\mathcal{I}_{p}(\\ta)$, results in the familiar prior first defined by [Ref: Jeffreys:1946], in Eq.(meas1). Furthermore, substituting $p(s\\vert\\ta)$ into the expression for the Fisher Information matrix, shows that it is proportional to the covariance matrix, $\\mathbf{C}(\\ta)$, i.e $$\\mathcal{I}_{p}(\\ta) = \\beta^{2}\\mathbf{C}(\\ta). $$ I approximate Eq.(meas1) by substituting Eq.(fisher) for the metric, $\\mathbf{g}$ and replacing it by its value at $\\ta_\\alpha$. $$\\Omega_\\alpha \\approx \\sqrt{\\mathcal{I}(\\ta_\\alpha)}\\int{d\\ta_{\\alpha};e^{-\\frac{\\beta}{2}\\left(\\ta - \\ta_{\\alpha}\\right)\\cdot\\mathbf{\\nabla}^{2}\\mathcal{G}(\\ta_{\\alpha})\\cdot\\left(\\ta - \\ta_\\alpha\\right)}} = \\left(\\frac{2\\pi}{\\beta}\\right)^{\\frac{d}{2}}\\sqrt{\\frac{\\mid\\mathcal{I}(\\ta_\\alpha)\\mid}{\\mid\\nabla^{2}\\mathcal{G}(\\ta_\\alpha)\\mid}}. $$ In addition, the Hessian matrix of $\\mathcal{G}(\\ta_\\alpha)$ can be shown to be related to the Fisher information as: $$ \\beta\\nabla^{2}\\mathcal{G}\\alpha = \\beta\\sum{\\alpha}{p(s\\mid\\ta_{\\alpha})\\nabla^{2}\\varepsilon(s\\mid\\ta)} - \\mathcal{I}(\\ta) $$ Defining the matrix $\\mathrm{H}(\\ta) \\equiv \\left\\langle\\nabla^{2}\\varepsilon(s\\mid\\ta)\\right\\rangle_{s}$, and using the identity, $\\log\\mid\\mathrm{A}\\mid = \\Tr\\log\\mathrm{A}$ along with the relation, Eq.(fisher) gives: $$\\log\\Omega_\\alpha \\approx \\frac{d}{2}\\log 2\\pi + \\frac{1}{2}\\Tr\\left{\\log\\left(\\frac{1}{\\beta}\\mathrm{H}^{-1}(\\ta_\\alpha)\\mathcal{I}(\\ta_\\alpha)\\right) - \\log\\left( \\mathrm{1} - \\frac{1}{\\beta}\\mathrm{H}^{-1}(\\ta_\\alpha)\\mathcal{I}(\\ta_\\alpha)\\right)\\right}. $$ Thus, the measure of generalization depends both on the intrinsic geometry of the data space, as exemplifed by the Fisher information metric, and as before, inversely on the square root Hessian determinant of the free energy. The Fisher determinant in Eq.(gena) plays the role of a Jeffreys' prior, to maintain representation invariance, while the Hessian of the free energy measures the ``sharpness'' of a local minimum as before. This analysis suggests that generalization is greater when the overall curvature of the free energy at a local minima is low, given an intrinsic parameter geometry as defined by the Fisher metric, $\\mathcal{I}(\\ta)$. Interestingly, if a choice of coordinates are possible such that the curvature of the free energy is similar at different minima, then the generalizability depends on the variance in the gradient of the loss function at these minima, as embodied by the Fisher information, $\\mathcal{I}(\\ta)$. %$$ % %\\Omega\\left[{\\mathbf{\\theta}}\\right] = 2m\\0int_{\\vec{\\theta}{i}}^{\\vec{\\theta}{f}}{d\\vec{\\theta}\\cdot\\mathbf{C}^{-1}(\\vec{\\theta})\\cdot\\boldsymbol{\\nabla}\\mathcal{G}(\\vec{\\theta})}, %\n$$ %is path dependent. Consequently, the solution to Eq.(ss) is obtained upon rewriting it as: %$$ % %\\frac{\\partial\\sigma_{0}}{\\partial\\vec{\\theta}} = -2m\\mathbf{C}^{-1}(\\vec{\\theta})\\cdot{\\bf f}(\\vec{\\theta})\\sigma_{0}(\\vec{\\theta}) %\n$$ %Eq.(hk) has a path integral solution given by the Feynman-Kac theorem as: %$$ % %\\sigma_{0}(\\vec{\\theta}) = \\left\\langle\\delta\\left(\\vec{\\theta} -\\vec{\\theta}f\\right)\\exp\\left(-\\Omega\\left[{\\mathbf{\\theta}}\\right]\\right)\\right\\rangle{\\ta_{i}\\rightarrow\\ta_f} %$$ %The average $\\langle ...\\rangle_{\\ta{i}\\rightarrow\\ta_f}$ is an average over all paths in parameter space originating at %the initial parameters $\\ta_i$ and ending at $\\ta_f$, and over an initial probability over the parameters $\\ta_i$. On the other %hand if we assume that the Fokker-Planck equation, Eq.(fp) has a steady state solution written in the form:\nIllustrative Examples I estimate the average force, $\\fb(\\ta)$ and covariance, $\\mathbf{C}(\\ta)$ for the loss functions used in linear regression, and in maximum likelihood estimation. I show that in both these cases the covariance matrix is generally non-zero, and is nonlinear in the parameters, $\\ta$.\nLinear Regression Consider the simple case of a linear regression problem, where for each sample, $s$, we have input-output pairs, $\\{\\vec{x}(s),\\vec{y}(s)\\}$ and a loss function of the form: $$\n\\varepsilon(\\ta;s) = \\frac{1}{2}\\norm{\\vec{y}(s) - \\ta\\cdot\\vec{x}(s)}^{2} $$ The force $\\fb(\\ta;s)$ is calculated as: $$\\fb(\\ta;s) = \\vec{x}(s)\\left[\\ta\\cdot\\vec{x}(s) - \\vec{y}(s)\\right] $$ The free energy is then: $$\\mathcal{G}(\\ta) = -\\log\\left[\\sum_{s}{q(s)e^{-\\beta e(\\ta;s)}}\\right] $$ The optimal parameters are then given by $\\ta^* = \\arg\\min_{\\ta} \\mathcal{G}(\\ta)$. Thus, this is equivalent to finding a solution to the equation: $$\\left\\langle\\fb(\\ta;s)\\right\\rangle = 0 $$ On using Eq. (lfb1) in Eq. (lfb3) we get that $\\ta^*$ satisfy: $$\\ta^*\\cdot\\left\\langle\\vec{x}(s)\\vec{x}(s)\\right\\rangle = \\left\\langle\\vec{y}(s)\\vec{x}(s)\\right\\rangle $$ Defining ${\\bf X} \\equiv \\left\\langle\\vec{x}(s)\\vec{x}(s)\\right\\rangle$ and ${\\bf Y} \\equiv \\left\\langle\\vec{y}(s)\\vec{x}(s)\\right\\rangle$, and replacing the ensemble averages by empirical averages over samples, I obtain the classical solution to the linear regression problem: $$\\ta^* = {\\bf X}^{-1}\\cdot{\\bf Y} $$ On the other, the SGD algorithm results in a time evolution given by a general Fokker-Planck equation, with diffusion tensor given by: $$\\mathbf{C}(\\ta) = \\mathbf{\\Gamma}^{\\mu\\nu}\\theta_{\\mu}\\theta_{\\nu} + 2\\mathbf{\\Lambda}^{\\mu}\\theta_{\\mu} + \\mathbf{D} $$ I have used the Einstein summation convention in Eq.(fb6) where repeated indices are assumed to be summed over. The tensors $\\mathbf{\\Gamma}$ and $\\mathbf{\\Lambda}$ are given by $4^{th}$-order correlations in the sample variables. $$ \\begin{aligned}\n\\mathbf{\\Gamma}^{\\mu\\nu} = \\left\\langle\\vec{x}(s)\\vec{x}(s)x_{\\mu}(s)x_{\\nu}(s)\\right\\rangle - \\left\\langle\\vec{x}(s)x_{\\mu}(s)\\right\\rangle\\left\\langle\\vec{x}(s)x_{\\nu}(s)\\right\\rangle \\ \\mathbf{\\Lambda}^{\\mu} = \\left\\langle\\vec{y}(s)x_{\\mu}(s)\\vec{x}(s)\\vec{x}(s)\\right\\rangle - \\left\\langle\\vec{y}(s)x_{\\mu}(s)\\right\\rangle\\left\\langle\\vec{x}(s)\\vec{x}(s)\\right\\rangle \\ \\mathbf{D} = \\left\\langle\\vec{y}(s)\\vec{x}(s)\\vec{y}(s)\\vec{x}(s)\\right\\rangle - \\left\\langle\\vec{y}(s)\\vec{x}(s)\\right\\rangle\\left\\langle\\vec{y}(s)\\vec{x}(s)\\right\\rangle . \\end{aligned} $$ It is clear from this that the steady state distribution for the Fokker-Planck equation with the covariance matrix given by Eq.(lfb7) is approximately Boltzmann only if the tensor $\\mathbf{D}$ is much bigger than the other two terms, i.e when the quartic correlations between input variables are much smaller than the correlations between input and output variables. This condition is not generally obeyed. %### Maximum Likelihood %We estimate the force and covariance tensors for a second, commonly used loss function, to further elucidate the %noise contributions to the dynamics. Consider a learning model where a statistical model is specified to evaluate a probability %distribution, $p(s;\\ta)$ for each sample $s$. Let the true probability distribution being modeled be $\\zeta(s)$. Then, define a %loss function %$$ % %\\varepsilon(s;\\ta) \\equiv \\log\\left[\\frac{\\zeta(s)}{p(s;\\ta)}\\right] %\n$$ %The asymptotic average loss function is then %$$ % %\\mathcal{G}(\\ta) = \\left\\langle\\varepsilon(s;\\ta)\\right\\rangle_{\\zeta} = \\sum_{s}{\\zeta(s)\\log\\left[\\frac{\\zeta(s)}{p(s;\\ta)}\\right]} = D(\\zeta\\mid\\mid p) %\n$$ %Correspondingly the average force is given by: %$$ % %\\fb(\\theta) = \\left\\langle\\frac{\\nabla p(s;\\ta)}{p(s;\\ta)}\\right\\rangle_{\\zeta} %\n$$ %The covariance tensor, $\\cb$, is given by the Fisher information: %$$ % %\\mathbf{C}(\\ta) = \\left\\langle\\fracpartial{\\ln p(s;\\ta)}{\\ta}\\fracpartial{\\ln p(s;\\ta)}{\\ta}\\right\\rangle_{\\zeta} %$$ %The Fisher information tensor has the properties of a metric tensor. Furthermore, in general, the covariance, %$\\mathbf{C}(\\ta)$ is positive definite. This implies that $\\mathbf{C}(\\ta)$ can be generally interpreted as a metric %tensor.\nGeometric Properties of the Covariance The covariance matrix, $\\cb$ is positive definite, and symmetric. I define an inner product that depends on $\\cb$ as follows: $$\n\\left\\langle{\\bf v},{\\bf u}\\right\\rangle_{\\mathbf{c}} \\equiv {\\bf v}\\cdot{\\cb}\\cdot{\\bf u} $$ The norm of an arbitrary vector, ${\\bf v}(\\ta)$ is then $\\norm{{\\bf v}(\\ta)}^{2} \\equiv \\langle{\\bf v},{\\bf v}\\rangle_\\mathbf{c}$. Then, it can be shown for arbitrary vectors ${\\bf u}$ and ${\\bf v}$, using the Cauchy-Schwarz inequality that: $$\\norm{{\\bf v} + {\\bf u}}^{2} = \\norm{\\bf v}^{2} + \\norm{\\bf u}^{2} + 2\\langle{\\bf v}, {\\bf u}\\rangle \\le \\left(\\norm{\\bf v} + \\norm{\\bf u}\\right)^{2} $$ In other words, the covariance matrix $\\cb$ can be treated as a metric, since Eq.(inner1) implies that such a metric satisfies the triangle inequality. Additionally, for a given sample $s$, changes in the loss function can be represented as: $$ d\\varepsilon(s,\\ta) = \\nabla\\varepsilon\\cdot d\\ta = \\mathbf{f}(\\ta,s)\\cdot d\\ta $$ Thus, upon defining $\\xi(\\ta;s) \\equiv \\varepsilon(s,\\ta) - \\langle \\varepsilon(s,\\ta)\\rangle_{s}$, we have $$ d\\xi = \\left({\\bf f}(\\ta;s) - {\\bf f}(\\ta)\\right)\\cdot d\\ta $$ I define a second inner product as an expectation value over the distribution of samples: $$ \\left\\langle{\\bf v},{\\bf u}\\right\\rangle_{s} = \\langle{\\bf v}(s)\\cdot{\\bf u}(s)\\rangle_{s} $$ Then, $$ \\norm{d\\xi}^{2} = \\sum_{ij}{\\mathbf{C}{ij}(\\ta)d\\theta{i}; d\\theta_{j}} = \\left\\langle d\\ta,d\\ta\\right\\rangle_{\\mathbf{c}} $$ This has a nice interpretation in that average mean square changes in the error, are equal to the infinitesimal ``distance\" covered in parameter space, whose metric is given by the covariance, $\\mathbf{C}(\\ta)$. One can similarly rewrite the Fokker-Planck equation, Eq.(boltz1) in terms of the inner product in parameter space as $$\\partial_{t}\\sigma = \\left\\langle\\nabla,\\left[\\mathbf{C}^{-1}\\cdot\\sigma\\nabla\\mathcal{G} + \\frac{1}{2m}\\nabla\\sigma\\right]\\right\\rangle_{\\mathbf{c}} . $$ Eq.(curve) suggests a geometric interpretation for the Fokker-Planck equation, and more specifically the conditions that should be satisfied for it to have an equilbrium distribution, rather than a steady state distribution. The first term in the right hand side of Eq.(curve) is independent of the metric, $\\mathbf{C}$, while the second depends on this choice. Thus, a modification that would ensure that both terms behave similarly would possibly allow for an equilibrium distribution.\nModified SGD: Natural Gradients The present analysis of the minibatch SGD algorithm has shown that the resulting dynamics of the associated probability distribution function over parameters satisfies a generalized Fokker-Planck equation, with diffusion tensors that are themselves parameter dependent. The diffusion tensors also act as a metric over a curved Riemannian manifold, and both the stationarity condition, Eq.(ss) and the analysis of specific examples suggest that SGD can be interpreted as a diffusive Langevin equation on a curved space, with the curvature of this space naturally induced by the geometric structure of the sample space. [Ref: Amari:1998] defined a ``natural\" gradient in a Riemannian space with metric $\\mathbf{G}$ as $$\n\\tilde{\\nabla}_{\\mathbf{G}}\\mathcal{G}(\\ta) \\equiv \\mathbf{G}^{-1}\\cdot\\nabla\\mathcal{G}(\\ta), $$ and proved that the natural gradient represents the direction of steepest descent in this curved space. Upon using the definition of a natural gradient, the steady state condition for the Fokker-Planck equation, Eq.(ss) can be rewritten as $$\\fracpartial{\\ln\\sigma_{0}}{\\ta} = -2m\\tilde{\\nabla}_{\\mathbf{C}}\\mathcal{G}(\\ta). $$ In other words, the direction of change in the steady state probability distribution is parallel to the natural gradient in a space with a metric given by the covariance tensor, $\\mathbf{C}(\\ta)$. Thus, in order to obtain a dynamics with a diffusion tensor that is independent of the parameters, $\\ta$, one can locally ``flatten\" the SGD time propagation by appropriately scaling the force. This is equivalent to modifying the SGD method by the following modified natural gradient descent algorithm: $$\\ta_{t+1} = \\ta_t + \\eta_{t}\\mathcal{A}(\\ta)\\cdot\\fb(\\ta;S_m) $$ As before, $\\fb(\\ta;S_{m})$ is a random variable with a distribution given by the central limit theorem. Thus, following Eq.(fp2), the modified propagator for the dynamics due to Eq.(msgd) is $$\\mathcal{K}(\\ta_{t+1}\\mid\\ta_{t};\\eta_t) = \\mathcal{K}{0}\\exp\\left[-\\frac{1}{2}\\left(\\frac{\\ta{t+1} - \\ta_t}{\\eta_t} - \\mathcal{A}\\fb(\\ta)\\right)\\mathbf{C}{ef}^{-1}(\\ta)\\left(\\frac{\\ta{t+1} - \\ta_t}{\\eta_t} - \\mathcal{A}\\fb(\\ta)\\right)\\right]. $$ Here, $\\mathcal{K}_{0}$ is a normalization factor, and the effective covariance tensor is $$\\mathbf{C}_{ef}(\\ta) = \\frac{1}{m}\\mathcal{A}^{T}(\\ta)\\mathbf{C}(\\ta)\\mathcal{A}(\\ta) $$ I impose the constraint that $\\mathcal{A}^{T} = \\mathcal{A}$, i.e $\\mathcal{A}$ is symmetric. Under these dynamics, the steady state distribution $\\tilde{\\sigma}(\\ta)$ satisfies the condition: $$\\fracpartial{\\ln\\tilde{\\sigma}}{\\ta} = -2m\\mathbf{C}^{-1}_{ef}\\cdot\\left(\\mathcal{A}(\\ta)\\nabla\\mathcal{G}(\\ta)\\right) $$ Using the definition of $\\mathbf{C}_{ef}$ in Eq.(ss2), the steady state condition for modified SGD becomes $$\\fracpartial{\\ln\\tilde{\\sigma}}{\\ta} = -2m\\mathbf{C}^{-1}(\\ta)\\mathcal{A}^{-1}(\\ta)\\nabla\\mathcal{G}(\\ta). $$ $A$ is chosen to be $$\\mathcal{A} = \\frac{1}{a}\\mathbf{C}^{-1}(\\ta), $$ Eq.(fisher) shows that the covariance tensor $\\mathbf{C}(\\ta)$ is proportional by a constant to the Fisher Information, $\\mathcal{I}(\\ta)$, which is a natural metric on statistical spaces ([Ref: Chentsov:1978,Dowty:2018]), and so Eq.(nat) becomes: $$\\mathcal{A} = \\frac{\\beta^{2}}{a}\\mathcal{I}_{p}^{-1}(\\ta). $$ From Eqs.(nat) and (nat1), the steady state condition under modified SGD becomes $$ \\begin{aligned}\n\\fracpartial{\\log \\tilde{\\sigma}}{\\ta} = -\\frac{2m}{a}\\nabla\\mathcal{G}(\\ta) ;; \\text{or}\\ \\tilde{\\sigma}(\\ta) \\propto \\exp\\left(-\\frac{2m}{a}\\mathcal{G}(\\ta)\\right). \\end{aligned} $$ Choosing the constant $a$ such that $\\frac{2m}{a} = \\beta$ results in the stationary distribution of the modified, natural gradient SGD, dynamics becoming identical to the true distribution, Eq.(boltz1). This also provides an additional interpretation for the mini-batch size, $m$, as an annealing parameter. As $m$ increases, the minimal parameters become close to the values possible for the absolute minimal loss, with the tradeoff being that training times correspondingly will have to correspondingly increase to obtain optimal parameter values. Thus, the minibatch size can also be treated as an inverse temperature parameter in a simulated annealing context, where an initial SGD is run using a relatively small minibatch size, and succeeding iterations are run with gradually increasing minibatch size.\nConclusions In this work, I have shown that the average loss satisfies an exponential (Gibbs-Boltzmann) distribution for large sample sizes, and that training a machine learning algorithm is equivalent to minimize the corresponding free energy of the Gibbs-Boltzmann distribution generated by the error function of the algorithm. Given this requirement, I have found the surprising result that the mini-batch stochastic gradient descent algorithm does not necessarily result in parameters that minimize the free energy. Rather, the SGD method generates probability distributions that satisfy a general Fokker-Planck equation, with diffusion tensors that are parameter dependent. Due to this parameter dependence, the steady state probability of the Fokker-Planck equation is different from the Boltzmann-Gibbs distribution that the average loss satisfies. To my knowledge, this contribution is a novel finding and will aid in interpreting the many experiments that have attempted to clarify the nature of the SGD method.\nI have also made an explicit connection between the SGD method and Information Geometry. I have shown that the SGD method corresponds to a diffusion in a curved space, whose metric is an intrinsic property of the underlying data, and the choice of loss functions. The diffusion tensor that governs the Fokker-Planck evolution of the corresponding probability density is proportional to this metric, and induces a ``natural gradient\" on the curved space in the sense defined by Amari. I have shown that by a simple and intuitive modification of the SGD method, results in stationary distributions that are consistent with the Boltzmann-Gibbs distribution of the average loss. Thus, I suggest that this modified gradient descent method is likely to have better convergence properties for training a machine learning algorithm. However, it is worth noting that there is a tradeoff involved, since the modified method requires the explicit computation of the inverse diffusion tensor at each timestep, and this could place an additional computational burden on the practical implementation of the modified method. The arguments for SGD are easily generalized to SGD with momentum, and the momentum based SGD also demonstrates similar geometric structure. Although I have not explicitly considered generalized variants of the SGD method such as Nesterov’s method ([Ref: Nesterov:2013]), I expect that the insights regarding the geometric contributions implicit in SGD will apply to these variants as well, since sampling the average force from minibatches induces dynamics in a space whose geometric structure is informed by the underlying data, and the choice of the loss function. Thus, I expect that this work will have value in informing the interpretation and understanding of more general SGD based methods. %This implies that there is %no universal steady state solution to Eq.(fp), and the probability distribution over parameters will generally depend %on the parameters chosen at the initial stage of training. In the special case where the covariance tensor, %$\\mathbf{C}(\\vec{\\theta})$ is independent of $\\vec{\\theta}$, the mini-batch SGD algorithm converges to a Boltzmann %distribution over the average loss, $\\mathcal{G}(\\vec{\\theta})$, in agreement with the true distribution of loss values %that we obtained based on large deviations arguments. Thus, we argue that mini-batch SGD does not converge %to the expected minimal training parameters in general. Instead, we will attempt to establish conditions under which %steady state properties can be extracted from the SGD algorithm. % Acknowledgements should go at the end, before appendices and references\n\\acks{I thank Dr. Sandeep Somani and Dr. Luca Larini for valuable discussions. I am grateful to SEPTA, Pennsylvania and the Lansdale-Doylestown branch for providing a hospitable environment during which a part of this work was done.}\n% Manual newpage inserted to improve layout of sample file - not % needed in general before appendices/bibliography.\n\\appendix\nAppendix A The theory of large deviations can be applied to derive the probability distributions for the average loss, in the asymptotic limit of large sample numbers, $n$, i.e as $n\\rightarrow\\infty$. Here, for the sake of completeness, we sketch an informal derivation of the results in this framework using steepest descent methods. These can be proved rigorously, using mathematical arguments beyond the scope of this work, and a description of these arguments can be found in [Ref: Varadhan:2008, Ellis:2008]. The derivations below are fairly standard, and can also be found in some form or the other in literature.\nGiven a loss function, $\\varepsilon(s \\vert f)$ and an average loss, $\\mathrm{E}_{n}(f)$ over $n$ randomly chosen samples, the probability of observing a given loss $E$ is: $$\nP\\left[E = \\mathrm{E}{n}(f)\\right] = \\sum{{s_{i}}}{Q\\left({s_{i}}\\right)\\delta\\Big[E - \\frac{1}{n} \\sum_{i}{\\varepsilon(s_{i}\\mid f)}\\Big]} $$ Here $Q\\left(\\{s_{i}\\}\\right)$ is the (usually unknown) probability of obtaining the input-output pairs of data, $s_{i} \\equiv \\{x_{i},y_i\\}$. Using the Fourier representation of the delta function, $\\delta(x) \\equiv \\int_{-\\infty}^{\\infty}{\\frac{dk}{2\\pi}\\; e^{ikx}}$ along with a change of variables, $\\zeta = \\frac{k}{n}$, we can write: %or simplicity, we assume that each such pair is generated independently, i.e. %$Q\\left(\\{s_{i}\\}\\right) = \\prod_{i}{q(s_i)}$. Then we can write: %$$ %P\\left[E= \\mathrm{E}{n}(f)\\right] = \\sum{{s_{i}}}{\\left(\\prod_{i=1}^{N}{q(s_{i})}\\right)\\delta\\left[E - \\frac{1}{n}\\sum_{i}{e(s_{i}\\mid f)}\\right]} %$$\n$$\nP\\big[E= \\mathrm{E}{n}(f)\\big] = \\int{-\\infty}^{\\infty}{\\frac{nd\\zeta}{2\\pi}; e^{in\\zeta E}\\left[\\sum_{{s_{i}}}{Q(\\left{s_{i}\\right})\\exp\\left{-i\\zeta\\sum_{i=1}^{n}{\\varepsilon(s_{i}\\mid f)}\\right}}\\right]} $$ Consider now: $$\\Lambda(i\\zeta,f) = -\\lim_{n\\rightarrow\\infty}\\frac{1}{n}\\log\\left[\\sum_{{s}}{Q({s_i})\\exp\\left{-i\\zeta\\sum_{i=1}^{n}{\\varepsilon(s_{i}\\mid f)}\\right}}\\right] $$ If $\\Lambda(i\\zeta, f)$ exists, we have that: $$P\\big[E= \\mathrm{E}{n}(f)\\big] = \\int{-\\infty}^{\\infty}{\\frac{nd\\zeta}{2\\pi}; e^{n\\left[i\\zeta E - \\Lambda(i\\zeta,f)\\right]}} $$ For samples that are chosen independently, we can use the additivity of the average loss over samples to regroup terms and show that the limit in Eq.(char) exists and the exponent becomes: $$\\lambda(i\\zeta,f) \\equiv -\\log\\Bigg[\\sum_{s_{i}}{q(s_{i})\\exp\\bigg{-i\\zeta\\varepsilon(s_{i}\\mid f)\\bigg}}\\Bigg] $$ Upon setting $\\zeta \\equiv \\frac{k}{N}$, $z \\equiv i\\zeta$, and using Eq.(char), Eq.(fourier1) becomes: $$P\\big[E= \\mathrm{E}{n}(f)\\big] = \\frac{N}{2\\pi i}\\int{z = -i\\infty}^{i\\infty}{dz \\ \\exp\\Bigg[N\\Big(z E - \\lambda(z ; f)\\Big)\\Bigg]} $$ Define $\\Psi(z ; f) \\equiv \\Big(z E - \\Lambda(z ; f)\\Big)$. Let $z_0$ be the saddle point of $\\Psi(z ; f)$. We expand $\\Psi$ around its saddle point as: $$\\Psi(z ; f) \\approx \\Psi(z_{0} ; f) + \\frac{1}{2}\\Psi’’(z_{0})(z - z_{0})^2 $$ Here $\\Psi''(z_{0})$ is the second derivative: $$ \\Psi’’(z_{0}) \\equiv \\frac{d^2}{dz^{2}}\\Psi(z ; f)\\Bigg\\vert_{z = z_0} $$ We ignore higher order contributions around the saddle point by making the assumption that they are oscillatory and do not contribute significantly to the integral in Eq.(steepd1). Furthermore we choose a contour, $\\mathcal{C} : z - z_{0} = r e^{i\\phi}$ such that: $$ \\Psi’’(z_{0};f)e^{2i\\phi} = -\\lvert\\Psi’’(z_{0};f)\\rvert $$ On integrating over this contour, $\\mathcal{C}$, Eq.(A1) takes the form: $$ P\\left[E= \\mathrm{E}{n}(f)\\right] = \\frac{N}{2\\pi i}e^{i\\phi + N\\Psi(z{0};f)} \\int_{0}^{\\infty}{dr; e^{-\\frac{N}{2}r^{2}\\lvert \\Psi’’(z_{0};f)\\rvert}} $$ Thus, the probability distribution becomes: $$ P(E) \\approx \\sqrt{\\frac{N}{2\\pi\\lvert\\Psi’’(z_{0};f)\\rvert}}e^{i(\\phi -\\frac{\\pi}{2})}\\exp\\left(N\\Psi(z_0 ; f)\\right) $$ The saddle point condition, $\\Psi'(z_{0}) = 0$ is equivalent to the equation: $$ E = \\frac{d}{dz}\\Lambda(z ; f)\\Bigg\\vert_{z = z_{0}} $$ $E$ is a real number, and thus, $\\lambda$ and its derivatives are real at $z = z_{0}$. Then, the contour $\\mathcal{C}$ is such that $\\phi = \\frac{\\pi}{2}$, and setting $z_{0} = \\beta$ we get: $$P(E) \\approx \\sqrt{\\frac{N}{2\\pi\\lvert\\Psi’’(\\beta;f)\\rvert}}\\exp\\left(N\\left[\\beta E - \\Lambda(\\beta ; f)\\right]\\right) $$ $\\beta$ plays the role of an inverse temperature. Eq.(probA) is the desired probability distribution, with $\\Lambda(\\beta;f)$ becoming the free energy corresponding to a partition function, $\\mathcal{Z}_{n}(f)$ estimated over a probability distribution, $Q_{n}(S)$ over $n$ samples $S$ and average error, $\\mathrm{E}_{n}(S\\mid f)$: $$\\Lambda(\\beta ; f) = -\\lim_{n\\rightarrow\\infty}\\frac{1}{n}\\log\\left[\\sum_{S}{Q_{n}(S)e^{-n\\beta E_{n}(S\\mid f)}}\\right] = -\\lim_{n\\rightarrow\\infty}\\frac{1}{n}\\log\\mathcal{Z}_{n}(f) $$\nWe have derived the asymptotic distribution assuming the existence of a single saddle point. However, the steepest descent method can also be applied when there are multiple non-degenerate saddle points and Eq.(A2) generalizes to a sum over these saddle points. However, the dominant one among them ``wins\" in the asymptotic limit, $N\\rightarrow\\infty$ since the separation between the dominant point and others grows exponentially.\nAppendix B % Note: in this sample, the section number is hard-coded in. Following % proper LaTeX conventions, it should properly be coded as a reference:\n%In this appendix we prove the following theorem from %Section~sec:textree-generalization: In this appendix we derive the form of the propagator in Eq.(fp2). We provide an informal derivation based on the Ito integral. To recapitulate, the propagator is defined as: $$\nK(\\ta,\\ta’\\mid \\eta_t) \\equiv \\sum_{\\Delta_{t}{\\bf f}}{\\delta(\\ta - \\ta’ - \\Delta_{t}{\\bf f})P(\\Delta_{t}{\\bf f})} $$ The quantity $\\Delta_{t}{\\bf f}$ is the ``integral\" of the random function $f$ over the time interval $\\eta_{t}$. We can write $\\Delta_{t}{\\bf f} = \\eta_{t}{\\bf f}(\\ta) + \\Delta_{t}\\mathbf{\\xi}$, where the second part is a random variable centered around $0$. Thus, we divide the interval of length $\\eta_{t}$ into $T$ slices with the understanding that we consider the limit $T\\rightarrow\\infty$. Then, the quantity $\\Delta_{t}\\mathbf{\\xi}$ is: $$\\Delta_{t}{\\bf f} \\approx \\sum_{\\alpha = 1}^{T}{\\mathbf{\\xi}_{\\alpha}} $$ The random variables $\\mathbf{\\xi}_\\alpha$ are all individually Gaussian random variables with p.d.f's given by Eq.(trs1), with individual variances given by the tensor $\\mathbf{C}(\\ta)$. A property of Gaussian random variables is that the sum of $T$ Gaussian random variables is also Gaussian , but with a variance matrix that is the sum of individual variances, i.e $T\\mathbf{C}(\\ta)$. Hence, more generally, the variance matrix of the random variable $\\Delta_{t}\\mathbf{\\xi}$ is thus $$\\mathbf{C}{\\Delta}(\\ta;\\eta{t}) = \\int_{0}^{\\eta_{t}}{\\mathbf{C}(\\ta)\\ d\\tau} = \\eta_{t}\\mathbf{C}(\\ta) $$ Consequently, the propagator becomes: $$K(\\ta,\\ta’\\mid\\eta_{t}) = \\int{d\\mathbf{\\Delta}; \\delta\\left(\\ta - \\ta’ - \\eta_{t}{\\bf f}(\\ta) - \\mathbf{\\Delta}\\right)\\exp\\left( -\\frac{m}{2\\eta_{t}}\\mathbf{\\Delta}\\cdot\\mathbf{C}^{-1}\\mathbf{\\Delta}\\right)} $$ This results in the Fourier form of the propagator as: $$K(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = \\frac{B_m}{\\eta_{t}}\\int{d{\\bf p}\\exp\\left[i{\\bf p}\\cdot\\left(\\frac{\\vec{\\theta}{t+1} - \\vec{\\theta}{t} }{\\eta_{t}} - {\\bf f}(\\vec{\\theta}_t)\\right)\n\\frac{1}{2m\\eta_{t}}{\\bf p}\\cdot\\mathbf{C}(\\vec{\\theta}_{t})\\cdot{\\bf p}\\right]} $$ Thus, if we write $\\dot{\\ta}_{t} \\approx \\frac{1}{\\eta_t}(\\ta_{t+1} - \\ta_{t})$, the propagator can be written as: $$ K(\\ta_{t+1}\\mid\\ta_{t}, \\eta_{t}) \\approx \\exp\\left[-\\eta_{t}\\mathrm{L}(\\dot{\\ta}{t},\\ta{t})\\right] $$ Here, the Lagrangian, $\\mathrm{L}$, in Eq.(B6) is the same as in Eq.(fp2), i.e $$ \\mathrm{L}(\\dot{\\ta},\\ta) = \\frac{m}{2}\\left(\\dot{\\ta} - {\\bf f}(\\ta)\\right)\\cdot\\mathbf{C}^{-1}(\\ta)\\cdot \\left(\\dot{\\ta} - {\\bf f}(\\ta)\\right) $$\nAppendix C Here, we derive the Fokker-Planck equation in the continuum time limit, $\\eta_{t}\\rightarrow 0$. The form, Eq.(fp2) and Eq.(B6) of the short-time propagator can be rewritten using a change of variables, ${\\bf k} = {\\bf p}/\\eta_{t}$ to be: $$\nK(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = B_{m}\\int{d{\\bf k}; e^{i{\\bf k}\\cdot(\\ta_{t+1} - \\ta_{t})}\\exp\\left(-\\eta_{t}\\left[i{\\bf k}\\cdot{\\bf f}(\\ta) + \\frac{1}{2m}{\\bf k}\\cdot\\mathbf{C}\\cdot{\\bf k}\\right]\\right)} $$ For short times, $\\eta_{t} \\rightarrow 0$, the exponential can be expanded using $e^{-\\eta_{t}\\phi} \\approx (1 - \\eta_{t}\\phi)$ as $$K(\\vec{\\theta}{t+1}\\mid\\vec{\\theta}{t};\\eta_{t}) = B_{m}\\int{d{\\bf k}; e^{i{\\bf k}\\cdot(\\ta_{t+1} - \\ta_{t})}\\left(1-\\eta_{t}\\left[i{\\bf k}\\cdot{\\bf f}(\\ta) + \\frac{1}{2m}{\\bf k}\\cdot\\mathbf{C}\\cdot{\\bf k}\\right]\\right)} $$ Since the first term on the r.h.s of Eq.(C2) is equal to $\\delta(\\ta' - \\ta)$, as $\\eta_{t} \\rightarrow 0$, we can multiply both sides by $\\sigma(\\ta,t)$, integrate over $\\ta$ and convert Eq.(C2) to: $$\\frac{1}{\\eta_{t}}(\\sigma(\\ta,t+1) - \\sigma(\\ta,t)) = -\\int{d{\\bf k}d\\ta\\left(i{\\bf k} e^{i{\\bf k}\\cdot(\\ta_{t+1} - \\ta_{t})}{\\bf f}(\\ta_{t}) + \\frac{1}{2m}{\\bf k}e^{i{\\bf k}\\cdot\\ta_{t+1}}\\cdot\\mathbf{C}\\cdot{\\bf k}e^{-i{\\bf k}\\cdot\\ta_{t}}\\right)\\sigma(\\ta,t)} $$ We now use the following properties: $$ \\begin{aligned}\n\\int{d{\\bf k}i{\\bf k}e^{i{\\bf k}\\cdot(\\ta_{t+1} - \\ta_{t})}} = \\mathbf{\\nabla}{\\ta}\\delta(\\ta{t+1} - \\ta_{t})\\ \\int{{\\bf k}e^{i{\\bf k}\\cdot\\ta_{t+1}}\\cdot{C}(\\ta_{t})\\cdot{\\bf k}e^{-i{\\bf k}\\cdot\\ta_{t}}d{\\bf k}} = \\mathbf{\\nabla}{\\ta{t+1}}\\cdot\\mathbf{C}(\\ta_{t})\\cdot\\mathbf{\\nabla}{\\ta{t}}\\delta(\\ta_{t+1} - \\ta_{t})\\ \\int{\\nabla_{\\ta_t}\\delta(\\ta_{t+1} - \\ta_{t})\\cdot{\\bf f}(\\ta_{t})\\sigma(\\ta_{t},t)d\\ta_{t}} = -\\nabla\\cdot\\left({\\bf f}(\\ta_{t+1})\\sigma(\\ta_{t+1},t)\\right)\n\\end{aligned} $$ From Eq. (C3) and (C4), we obtain the Fokker Planck equation upon integrating over $\\ta_{t}$: $$ \\frac{\\partial\\sigma}{\\partial t} = -\\nabla_{\\ta}\\cdot\\left({\\bf f}(\\ta)\\sigma(\\ta,t)\\right) + \\frac{1}{2m}\\nabla_{\\ta}\\cdot\\mathbf{C}(\\ta)\\cdot\\nabla_{\\ta}\\sigma(\\ta,t) $$\nAppendix D I show here that momentum based SGD methods describe a probability distribution that also satisfies a similar Fokker-Planck time evolution. Momentum SGD corresponds to the following time evolution ([Ref: Rumelhart:1986]): $$\n\\Delta\\ta_{t} = -\\eta\\nabla_{\\ta}E\\left(\\mathcal{S}{m}\\mid\\ta_t\\right) + p\\Delta\\ta{t-1} $$ Here, $\\Delta\\ta_{t} \\equiv \\ta_{t+1} -\\ta_{t}$, and $\\epsilon , p$ are the learning and momentum parameters. By introducing a momentum variable, ${\\bf p}_t$, [Ref: Qian:1997] showed that momentum based SGD can be described by the following dynamics: $$ \\begin{aligned}\n\\mathbf{p}{t} \\equiv \\frac{M}{\\Delta t}(\\ta{t+1} - \\ta_{t}) \\\n\\frac{\\Delta\\mathbf{p}{t}}{\\Delta t} + \\mu\\mathbf{p}{t} = -\\nabla_{\\ta}E\\left(\\mathcal{S}_{m}\\mid\\ta_t\\right) \\end{aligned} $$ The parameters, $\\{M,\\mu,\\Delta t\\}$ are related to the learning rate and momentum parameter as ([Ref: Qian:1997]): $$\\eta = \\frac{(\\Delta t)^2}{M + \\mu\\Delta t} ;; \\text{and};; p = \\frac{M}{M + \\mu\\Delta t} $$ Eqs.(sgdM1) and (sgdM2) are discretized versions of Newton's equations in the presence of friction (the term with $\\mu$). In the limit, $\\Delta t \\rightarrow 0$, we can and defining, $\\mathbf{Q} \\equiv {{\\ta}\\choose{\\mathbf{p}}}$, they can be written in the general form: $$\\frac{d\\mathbf{Q}}{dt} = \\mathbf{F}(\\mathbf{Q}) + \\vec{\\xi}(\\mathbf{Q};t) $$ The generalized force, $\\mathbf{F}(\\mathbf{Q}$ has the form: $$ \\mathbf{F}(\\mathbf{Q}) \\equiv {{\\frac{1}{M}\\mathbf{p}}\\choose{-\\nabla_{\\ta}\\mathcal{G}(\\ta) - \\mu\\mathbf{p}}} ;\\text{and}; \\vec{\\xi}(\\mathbf{Q};t) \\equiv {{0}\\choose{-\\nabla_{\\ta}[E\\left(\\mathcal{S}_{m}\\mid\\ta_t\\right)-\\mathcal{G}(\\ta)]}} $$ Eq.(sgdgen) is a first order stochastic differential equation in the space of generalized coordinates, $\\mathbf{Q}$, with a noise term, $\\vec{\\xi}(\\mathbf{Q};t)$ that by the arguments of Secs.(4.1) and (4.2), is Gaussian with a covariance matrix given by $\\mathbf{B}(\\mathbf{Q})$ defined as: $$ \\mathbf{B}(\\mathbf{Q}) \\equiv \\begin{pmatrix} 0 \u0026 0 \\ 0 \u0026 \\mathbf{C}(\\ta) \\end{pmatrix} $$ Thus, by the same considerations as in the previous sections, the dynamics of the probability density function, $\\sigma(\\mathbf{Q},t)$ over generalized coordinates, $\\mathbf{Q}$ is given by a Fokker-Planck equation: $$\\frac{\\partial}{\\partial t}\\sigma(\\mathbf{Q},t) = -\\nabla_{\\bf Q}\\cdot\\left(\\mathbf{F}(\\mathbf{Q})\\sigma\\right) + \\frac{1}{2m}\\nabla_{\\bf Q}\\cdot\\mathbf{B}(\\mathbf{Q})\\cdot\\nabla_{\\bf Q}\\sigma $$ As before, the quantity $m$ in Eq.(gfp) is the minibatch size. %Thus, the equilibrium condition for %Eq.(gfp) is: %$$ % %\\mathbf{F}(\\mathbf{Q}) = \\frac{1}{2m}\\mathbf{B}(\\mathbf{Q})\\cdot\\nabla_{\\bf Q}\\log\\sigma %\n$$ Writing Eq.(gfp) in terms of $\\ta$ and ${\\bf p}$ gives: $$\\partial_{t}\\sigma = - \\frac{1}{M}\\mathbf{p}\\cdot\\nabla_{\\ta}\\sigma - \\nabla_{\\bf p}\\left(\\mathbf{f}(\\ta) - \\mu \\mathbf{p}\\right)\\sigma + \\frac{1}{2m}\\nabla_{\\bf p}\\cdot\\mathbf{C}(\\ta)\\cdot\\nabla_{p}\\sigma $$ Define a Hamiltonian, and its Poisson bracket as $$ \\begin{aligned} H(\\mathbf{Q}) \\equiv \\frac{\\mathbf{p}\\cdot\\mathbf{p}}{2M} + \\mathcal{G}(\\ta). \\ \\left{H(\\ta,\\mathbf{p}),g(\\ta,\\mathbf{p})\\right} \\equiv \\frac{\\partial H}{\\partial\\ta}\\cdot\\frac{\\partial g}{\\partial\\mathbf{p}} - \\frac{\\partial g}{\\partial\\ta}\\cdot\\frac{\\partial H}{\\partial\\mathbf{p}} \\end{aligned} $$ Eq.(gfp1) can be rewritten in terms of the Hamiltonian as $$\\partial_{t}\\sigma = -\\left{H(\\ta,\\mathbf{p}),\\sigma\\right} + \\mu\\nabla_{\\bf p}\\cdot(\\mathbf{p}\\sigma) + \\frac{1}{2m}\\nabla_{\\bf p}\\cdot\\mathbf{C}(\\ta)\\cdot\\nabla_{p}\\sigma $$ For $\\sigma_{ss}(\\mathbf{Q}) \\propto \\exp\\left(-\\beta H\\right)$ to be a stationary distribution of Eq.(liou), the friction and noise contributions have to balance each other out, i.e. $$\\nabla_{\\bf p}\\cdot\\left[\\mu\\mathbf{p}\\sigma_{ss} + \\frac{1}{2m}\\mathbf{C}(\\ta)\\cdot\\nabla_{\\bf p}\\sigma_{ss}\\right] = 0 $$ This condition amounts to requiring that $$\\mu\\mathbf{p} - \\frac{\\mathbf{\\beta p}}{2mM}\\cdot\\mathbf{C}(\\ta) = 0. $$ Eq.(liou2) cannot be satisfied unless the covariance matrix, $\\mathbf{C}(\\ta)$ is constant, as in the case for regular SGD. Thus, for general momentum based SGD methods, as with regular SGD, the algorithm does not converge to the stationary Boltzmann-Gibbs distribution.\n\\bibliography{sgd.fn}\n",
+  "wordCount" : "9097",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "V. Krishna"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/sgd_asymptotics/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Computational Biology \u0026 AI Research",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="header-nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Computational Biology &amp; AI Research (Alt + H)">Computational Biology &amp; AI Research</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu" class="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="/posts/">Publications and Notes</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</nav>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">
+
+<span>43 min</span>&nbsp;·&nbsp;<span>V. Krishna</span>
+
+</div>
+  </header> 
+  <div class="post-content md-content">$$
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+\newcommand{\ta}{\vec{\theta}}
+\newcommand{\fb}{{\bf f}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\cb}{\mathbf{C}(\vec{\theta})}
+\DeclareMathOperator{\Tr}{Tr} 
+$$<h1 id="asymptotic-properties-of-the-stochastic-gradient-descent-method">Asymptotic Properties of the Stochastic Gradient Descent Method<a hidden class="anchor" aria-hidden="true" href="#asymptotic-properties-of-the-stochastic-gradient-descent-method">#</a></h1>
+<p><strong>Author:</strong> Vinod Krishna</p>
+<h2 id="abstract">Abstract<a hidden class="anchor" aria-hidden="true" href="#abstract">#</a></h2>
+<p>This paper presents an analysis of the asymptotic and dynamical properties of the minibatch
+stochastic gradient descent (SGD) algorithm and the probability distributions induced by SGD.
+The mean error in a machine learning algorithm is shown to satisfy a Boltzmann-Gibbs distribution,
+with optimal learning parameters corresponding to the minima of the free energy of this distribution.
+It is shown that the SGD algorithm does not generally converge to the free energy minima of
+the Boltzmann-Gibbs distribution.
+A modified SGD algorithm is derived, based on an
+information geometric interpretation of SGD, that is guaranteed to sample the free energy of the
+Boltzmann-Gibbs distribution, irrespective of the nature of the loss surface.
+By accounting for the
+geometry of the space in which the data is embedded, I derive representation invariant measures of
+generalization performance.
+The analysis demonstrates that pure gradient descent methods would remain
+trapped in local minima, while stochastic gradient methods, where stochasticity is induced by random
+sampling of minibatches could allow for an escape from local minima to enable complete sampling of
+loss surfaces with multiple minima.
+The efficiency of such a sampling is exponential in the minibatch size,
+and stochastic fluctuations that enable escape from local minima reduce in probability as the minibatch size
+grows.</p>
+<p><strong>Keywords:</strong>
+Neural Networks, Stochastic Gradient Descent, Variational Inference</p>
+<h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Training machine learning algorithms on data to identify hyperparameters that minimize an error function
+is a critical task in supervised machine learning.
+This is a particularly challenging problem for deep networks
+because of the size of training sets used in deep learning applications, and the number of parameters that
+require optimization.
+A key technique central to training deep networks is the stochastic gradient descent
+(SGD) method, which uses randomly selected samples or mini-batches of samples from the training set to
+estimate gradients at each learning step.
+Traditional gradient descent, and its stochastic counterparts have
+been proven to converge to global minima of convex or nearly convex loss surfaces
+([Ref: SGD:Orig, Bouleau:1994, Bottou:2008,Bottou:2010,Recht:2016]).</p>
+<p>However, recent work has shown that generally, the loss surfaces of deep neural networks are highly
+non-convex in character, and have multiple mimina.([Ref: Dauphin:2014,Choromanska:2015])
+Consequently, the assumptions of convexity that underlie the mathematical analysis of stochastic gradient
+descent algorithms no longer apply, and why these algorithms perform efficiently in identifying optimal
+parameters for these networks is an open question.
+Intuitively, pure gradient descent could be expected to
+trap the system parameters at minima of the loss surface that are closest to the initial choice of parameters.
+On the other hand, stochastic gradient descent methods are potentially more efficient, and can avoid trapping
+in local minima, since random fluctuations intrinsic to these methods could enable escape from local configurations.</p>
+<p>In this work, this intuitive argument is used as a starting point and a formalism to analyse the
+behavior of the stochastic gradient descent method is developed.
+Earlier, classic analyses of gradient descent
+methods have mostly examined the convergence properties of individual trajectories in parameter space.
+However, stochastic gradient descent methods generate random, individual trajectories. Consequently,
+in the work here, I analyse probability distributions over ensembles of trajectories instead.
+Furthermore,
+an analysis of the probability distribution of hyperparameters could provide insights regarding the generalizability
+and stability properties of learning algorithms with optimal, or nearly optimal hyperparameters.
+Thus, such
+probability distributions are the subject of study in this paper.</p>
+<h2 id="results-and-organization-of-this-paper">Results and Organization of this Paper<a hidden class="anchor" aria-hidden="true" href="#results-and-organization-of-this-paper">#</a></h2>
+<p>Broadly this work makes the following contributions:</p>
+<ul>
+<li>Develops a probabilistic framework and shows the mean error in a machine learning algorithm follows a
+Boltzmann-Gibbs distribution and optimization of parameters that minimize the average error is equivalent
+to finding an optimum of the free energy corresponding to this distribution.
+This is outlined in Section 4.
+The Gibbs-Boltzmann framework is used to derive representation invariant measures of generalization extending
+work by [Ref: Hochreiter:1996,Keskar:2017,Dinh:2017] based on geometric arguments.
+This is outlined in Section 5.3.</li>
+<li>Shows that the stochastic contribution to stochastic gradient descent has the central limit property, i.e it is
+approximated by a Gaussian distribution with a state (parameter) dependent covariance matrix.
+The continuous
+time evolution of the probability distribution of parameters is shown to be given by a generalized Fokker-Planck
+equation.
+The stationary properties of this equation are analysed, and it is shown that SGD does not in general
+converge to the correct stationary Boltzmann-Gibbs error distribution, and instead results in steady states with a
+non-zero probability current in parameter space.
+These results are derived in Sections 5.1 and 5.2.</li>
+<li>The covariance matrix of the approximately Gaussian noise contribution to SGD is interpreted as a Fisher
+information matrix.
+Consequently, the covariance matrix has the properties of a metric in the space of parameters,
+and this allows for a geometric interpretation of SGD.
+It is shown that a simple modification of the SGD algorithm,
+to that of a stochastic natural gradient descent algorithm restores the correct stationary properties of the resulting
+dynamics.
+It is shown that this modified dynamics results in a Fokker-Planck equation that has a stationary
+Boltzmann-Gibbs distribution, and thus the stochastic natural gradient descent is shown to sample the true
+error distribution, unlike SGD.
+These results are derived in sections 6 and 7, with the geometric properties of
+the covariance matrix elaborated in section 6.2.</li>
+</ul>
+<p>This work thus combines insights from two disparate lines of analysis, to study the stationary properties
+of the probability distribution over algorithm training parameters, induced by the SGD evolution.</p>
+<h2 id="related-work">Related Work<a hidden class="anchor" aria-hidden="true" href="#related-work">#</a></h2>
+<p>I derive equations that govern the time evolution of the probability distribution of system parameters induced
+by the training process and analyse the properties of the stationary distribution of the dynamical equations,
+to understand the sampling and convergence behavior of SGD.</p>
+<h4 id="stochastic-differential-equations">Stochastic Differential Equations<a hidden class="anchor" aria-hidden="true" href="#stochastic-differential-equations">#</a></h4>
+<p>[Ref: Mandt:2017] have postulated that the probability distribution over system parameters
+satisfies an Ornstein-Uhlenbeck process, and have analysed the SGD algorithm in a Bayesian setting, while
+works by [Ref: Li:2015, Li:2017, Li:2018] have formalized the analysis of SGD by considering their continuum
+limits as stochastic differential equations.
+[Ref: Welling:2011] proposed a Langevin dynamics based method
+that propagated dynamics in parameter space through the addition of an external, Gaussian, noise source.
+By choosing the noise to be large enough to overcome the intrinsic stochasticity of the SGD method, they
+were able to demonstrate convergence of their method to a true Bayesian, posterior distribution.
+More
+recently, [Ref: Chaudhari:2018] have analysed the SGD method to show that it performs variational inference
+to minimize an average potential which is not necessary equivalent to the average loss that is used to compute
+gradients.
+In this work, I show that this is generally the case, and demonstrate that the steady state distribution
+of the SGD algorithm does in fact, induce a steady state non zero probability current at the fixed point.</p>
+<h4 id="generalizability-of-local-minima">Generalizability of Local Minima<a hidden class="anchor" aria-hidden="true" href="#generalizability-of-local-minima">#</a></h4>
+<p>An important measure of performance for machine learning algorithms is their ability to generalize.
+Consequently, a considerable body of work is devoted to developing measures of generalization performance
+for learning algorithms.
+In recent work, attempts have been made to develop generalization measures based
+on the structure of the loss surface generated by a learning algorithm.
+[Ref: Hochreiter:1996] first proposed
+measures of generalization based on the shape of minima of the loss surface.
+Work by [Ref: Keskar:2017]
+built on this insight and proposed that the sharpness of minima dictate the generalization performance of
+models built from parameters at these minima, and argued that sharp minima generalize poorly.
+However,
+[Ref: Dinh:2017] showed through a combination of analysis and computational experiments that by appropriate
+choice of representation of the parameter space, minima can be made arbitrarily sharp or shallow, thus
+presenting a challenge to notions of generalization performance based on the geometry of local minima
+belonging to the loss surface.
+In this work, I show how these different views can be reconciled by appropriately
+taking into consideration the underlying geometry governing the loss surface, and develop representation
+invariant measures of generalization performance.</p>
+<h4 id="natural-gradients">Natural Gradients<a hidden class="anchor" aria-hidden="true" href="#natural-gradients">#</a></h4>
+<p>[Ref: Amari:1998] defined the concept of a ``natural gradient&quot; based on the information geometric view of
+probability theory and statistics ([Ref: Rao:1945, Amari:2000]). His work has demonstrated that natural gradients in
+the parameter space of learning algorithms represent directions of steepest descent. [Ref: Pascanu:2014]
+have described natural gradient descent algorithms to train deep neural networks, while [Ref: Martens:2014]
+has discussed an interpretation of the natural descent method as a second order optimization technique.
+Furthermore other works, ([Ref: LeRoux:2008,Ollivier:2015,Grosse:2015,Bernacchia:2018]) have discussed
+the practical implementation of the natural gradient descent method, and methods to approximate the
+inverse of Riemannian metrices that need to be computed for its implementation. Here, I
+show that
+modifying SGD into a stochastic natural gradient like method ensures convergence of the parameter
+probability distribution function to the Boltzmann-Gibbs distribution in the limit of long time trajectories.</p>
+<h4 id="statistical-mechanics-in-learning-neural-networks">Statistical Mechanics in Learning Neural Networks<a hidden class="anchor" aria-hidden="true" href="#statistical-mechanics-in-learning-neural-networks">#</a></h4>
+<p>[Ref: Seung:1992] introduced a statistical mechanical framework to study the learning of rules from examples
+by feedforward neural networks.
+They showed that when training is stochastic, the networks are governed
+by a Gibbs distribution, and treated the sampling over training examples to be equivalent to an averaging over
+quenched disorder in a statistical mechanical setting.
+Their formulation relies on a substantial body of work
+involving an analysis of training neural networks (mainly perceptrons) using the statistical mechanics of
+disordered systems ([Ref: Carnavelli:1987, Gardner:1989,Rau:1993].</p>
+<p>The current analysis of the SGD method develops a similar framework to derive the true probability
+distribution of algorithm training parameters (or function implementations), and I argue that a training
+algorithm must converge to a probability distribution over the set of parameters that is at least
+approximately equivalent to this true distribution. I however average over the samples (``disorder&quot;), in
+the limit of large sample numbers, in order to derive this probability
+distribution.</p>
+<h2 id="network-training-and-free-energy-minimization">Network Training and Free Energy Minimization<a hidden class="anchor" aria-hidden="true" href="#network-training-and-free-energy-minimization">#</a></h2>
+<p>The problem that learning algorithms attempt to solve can be defined as follows. Given a set of  &ldquo;training&rdquo;
+data, $\{s_{i}\}_{i=1}^{n} = \{x_{i},y_{i}\}_{i=1}^{n}  \in \mathrm{D}$ and a space of functions,
+$\mathcal{F}$, learning algorithms attempt to find a function $f^* \in \mathcal{F}$ that satisfies:
+</p>
+$$
+f^{*} \leftarrow \arg \min_{f \in \mathcal{F}} \frac{1}{n}\sum_{s \in \mathrm{D}}^{n}{\mathcal{\varepsilon}(s\mid f)} 
+$$<p>Define an empirical average error over $N$ samples as
+</p>
+$$
+\mathrm{E}_{N}(f) =: \frac{1}{N}\sum_{i=1}^{N}{\varepsilon(s_{i}\mid f)}.
+$$<p>
+Intuitively, this is the mean loss incurred by $N$ samples according to the loss function $\varepsilon(s\vert f)$
+and input-output function $f(x(s))$.
+Furthermore, I assume that the average loss converges to a fixed value as
+the number of samples being averaged over increases, i.e
+</p>
+$$
+\mathrm{E}(f) =: \lim_{N\rightarrow\infty} \mathrm{E}_{N}(f)
+$$<p>
+I adopt a standard argument that is used to describe the origins of the Boltzmann distribution in statistical
+mechanics, to derive the statistics of the average error, $\mathrm{E}_{N}(f)$ as $N \rightarrow \infty$.
+A more
+general setting in which such statistics can be described is to be found in the theory of large deviations ([Ref: Varadhan:2008, Ellis:2008, Touchette:2009]).
+For completeness, I outline such a large deviations
+based approach in Appendix A.</p>
+<p>For a large number, $N$, of samples, the probability distribution of states with an average error,
+$\mathrm{E}_{N}(f)$ can be estimated using a combinatorial argument.
+Consider a choice of
+$\{m_{1},m_{2},..,m_{l}\}$ samples, $\{s_1 , s_2, ..s_{l}\}$ with corresponding errors,
+$\{\varepsilon(s_{1}\mid f),\varepsilon(s_{2}\mid f),...\}$.
+The probability of choosing $N = \sum_{k}{m_k}$
+samples such that their average energy is $\mathrm{E}_{N}(f)$ is given by summing over a multinomial
+distribution as</p>
+<p>$$</p>
+<p>P\left(E = \mathrm{E}<em>{N}(f)\right) = \sum</em>{\sum_{k}{\frac{m_{k}}{N}\varepsilon_{k} = \mathrm{E}<em>{n}(f)}}{\frac{N!}{m</em>{1}! m_{2}!..m_{l}!}\prod_{k=1}^{l}{q(s_{k})^{m_{k}}}}.</p>
+<p>$$</p>
+<p>Here, the probabilities $q(s_k)$ are the sample data probabilities, assuming each sample can be chosen
+independently.
+For large $N$, the summation in Eq.(combin) has as its dominant contribution, terms
+that grow exponentially with $N$.
+Such contributions can be estimated by using Stirling&rsquo;s approximation to
+the factorial function, and retaining the maximal contribution:
+$$</p>
+<p>P(E) \approx \max_{m_1,m_2,..}{C_{N}\frac{N^N}{m_{1}^{m_1 } m_{2}^{m_2 }&hellip;m_{l}^{m_l }}\prod_{k=1}^{l}{q(s_{k})^{m_k}}}.</p>
+<p>$$</p>
+<p>Here, $C_{N}$ is a term that is proportional to $\sqrt{N}$, and hence grows much more slowly than the rest of
+the contributions, hence it can be ignored in the estimation of the maximal contribution.
+Furthermore, the
+maximization in Eq.(combin1) is performed with the constraints:</p>
+<p>$$</p>
+<p>\sum_{k=1}^{l}{m_{k}} = N ; \text{and};
+\sum_{k=1}^{l}{m_{k}\varepsilon(s_{k}\mid f)} = N\mathrm{E}_{N}(f)</p>
+<p>$$</p>
+<p>By defining the probabilities, $p_{k} \equiv \frac{m_k}{N} \equiv p(s_{k}\vert f)$, Eq.(combin1) becomes</p>
+<p>$$</p>
+<p>P(E) \approx C_{N}\max_{p_{1},p_{2},..}{\exp\left[-N\sum_{k}{p_{k}\log\left(\frac{p_{k}}{q_{k}}\right)}\right]};
+\text{subject to} ;
+\sum_{k=1}^{l}{p_{k}\varepsilon(s_{k}\mid f)} = \mathrm{E}_{N}(f).</p>
+<p>$$</p>
+<p>The exponent in Eq.(combin2) is $N$ times the relative, or Kullback-Leibler, entropy $D(p\vert\vert q)$.
+Thus, the optimal probabilities, $p_{k}$ satisfy</p>
+<p>$$</p>
+<p>p^{*}<em>{k} = \arg \max</em>{{p_{1},..p_{l}}} \left{ D(p\mid\mid q) + \beta\left( \sum_{k}{p_{k}\varepsilon(s_{k}\mid f)} - \mathrm{E}_{N}(f) \right)\right}.</p>
+<p>$$</p>
+<p>Here, $\beta$ is a Lagrange multiplier. Upon solving Eq.(lagrange), the optimal probabilities are</p>
+<p>$$</p>
+<p>p(s\mid f) = \frac{q(s)e^{-\beta\varepsilon(s \mid f)}}{\sum_{s}{q(s)e^{-\beta\varepsilon(s \mid f)}}}.</p>
+<p>$$</p>
+<p>The partition function is defined to be $\mathcal{Z}(f) \equiv \sum_{s}{q(s)e^{-\beta\varepsilon(s\mid f)}}$.</p>
+<p>Eq.(combin4) defines the conditional probability over samples $s$ given a realization of the algorithm,
+$f$.
+This conditional probability can also be rewritten in terms of the partition function as
+$p(s\vert f) = \mathcal{Z}^{-1}(f)\exp(-\beta\varepsilon(s\vert f))$.
+From Eq.(combin2), the
+average error is seen to be</p>
+<p>$$</p>
+<p>\mathrm{E}<em>{N}(f) = \bar{E} \equiv \left\langle\varepsilon(s\mid f)\right\rangle</em>{s} = \sum_{s}{p(s\vert f)\varepsilon(s\mid f)}.</p>
+<p>$$</p>
+<p>The thermodynamic entropy corresponding to the partition function $\mathcal{Z}(f)$ is</p>
+<p>$$</p>
+<p>S(\bar{E};f) = \beta\left(\bar{E} + \frac{1}{\beta}\log\mathcal{Z}(f)\right).</p>
+<p>$$</p>
+<p>Substitution of Eqs.(combin4) and (entropy) into Eq.(combin2) shows that the
+probability distribution of the average error satisfies an exponential distribution</p>
+<p>$$</p>
+<p>P\left(E = \mathrm{E}_{N}(f)\right) \sim \exp\left[NS(E;f)\right].</p>
+<p>$$</p>
+<p>Thus, as expected, as the number of samples being averaged over become large, the empirical mean error
+converges to the average upon infinite sampling, and fluctuations away from this average are exponentially
+damped out in comparison.</p>
+<p>Finally, since it is interest to understand how training a machine learning algorithm propagates the
+average error in the space, $\mathcal{F}$ of functions that the algorithm can be optimized over, I estimate
+the equilibrium distribution, $\Sigma(f)$, over the space of functions.
+Since the distribution $p(s\mid f)$ is
+conditional to the function, $f$, the following condition applies:</p>
+<p>$$</p>
+<p>\sum_{\substack{s\in\mathrm{D}\ f\in\mathcal{F}}}{p(s\mid f)\Sigma(f)} = 1.</p>
+<p>$$</p>
+<p>By inspection of Eq.(combin4), Eq.(norm) is satisfied by the choice:</p>
+<p>$$</p>
+<p>\Sigma(f) = \frac{\mathcal{Z}(f)}{\sum_{\substack{f\in\mathcal{F}}}{\mathcal{Z}(f)}}
+$$</p>
+<p>Rewrite $\mathcal{Z}_{0} \equiv  \sum_{f\in\mathrm{F}}{\mathcal{Z}(f)}$ and define a free energy:</p>
+<p>$$</p>
+<p>\mathcal{G}(f) = -\frac{1}{\beta}\log\mathcal{Z}(f) = -\frac{1}{\beta}\log\left[\sum_{s\in\mathrm{D}}{q(s)e^{-\beta\varepsilon(s\mid f)}}\right].</p>
+<p>$$</p>
+<p>Then, $\Sigma(f)$ has the form of a Boltzmann distribution over the space of functions:</p>
+<p>$$</p>
+<p>\Sigma(f) = \mathcal{Z}_{0}^{-1}\exp\left[-\beta\mathcal{G}(f)\right].</p>
+<p>$$</p>
+<p>The form, Eq.(boltz1), of the probability distribution implies that a function, $f^*$, that satisfies
+the condition, Eq.(condition), equivalently minimizes the free energy, $\mathcal{G}(f)$:</p>
+<p>$$</p>
+<p>f^* = \arg \max_{f} \Sigma(f) ;
+\text{or equivalently}; f^* = \arg\min_{f}\mathcal{G}(f)</p>
+<p>$$</p>
+<p>In general the probability distribution over the space of possible functions is a Boltzmann distribution
+(Eqs.(boltz) and (freeE)).
+Consequently, methods that train a learning algorithm, correspond to
+a sampling of a Boltzmann-Gibbs distribution over the space, $\mathcal{F}$, of possible functions.
+Thus
+a strong condition for a successful training method is that the probability induced by this sampling process
+should converge to the distribution, $\Sigma(f)$.
+Alternatively, a weaker condition is that the maximal values
+of the probability distribution induced by the training process should coincide with the minima of the free
+energy, $\mathcal{G}(f)$.</p>
+<h2 id="the-stochastic-gradient-descent-algorithm">The Stochastic Gradient Descent Algorithm<a hidden class="anchor" aria-hidden="true" href="#the-stochastic-gradient-descent-algorithm">#</a></h2>
+<p>For loss surfaces that are purely concave, it has been proven that gradient descent methods converge exactly
+to parameter values that minimize the empirical error.
+However, deep learning algorithms typically generate loss
+surfaces that are ``rugged&rsquo;&rsquo; in the space of network parameters, and contain multiple minimal points
+([Ref: Dauphin:2014,Choromanska:2015]).
+Training such methods using stochastic, minibatch
+gradient descent methods has proven to be successful in reaching parameter values that successfully
+minimize the loss function, to the extent that these algorithms generalize.
+Consequently, minibatch gradient
+descent methods are among the most commonly used methods to train deep networks.
+Here, I analyse the
+minibatch gradient descent method in this context.</p>
+<p>The analysis I present in this paper applies to loss functions that are at least twice differentiable, i.e have
+second partial derivatives that all exist.</p>
+<h3 id="time-evolution-of-probability-distributions-under-sgd">Time Evolution of probability distributions under SGD<a hidden class="anchor" aria-hidden="true" href="#time-evolution-of-probability-distributions-under-sgd">#</a></h3>
+<p>Consider a deep network with network parameters, $\vec{\theta}$ and a training set of $N$ samples,
+$\mathcal{S}_N \equiv \{s_{1},s_2,s_3, ..s_N\}$.
+Generally, the number of training samples $N$ for such networks
+is large, ranging from thousands to millions.
+Let $\varepsilon(s\vert\ta)$ be the loss incurred by a sample $s$ for
+a given set of network parameters, $\vec{\theta}$.
+In stochastic minibatch gradient descent, a subset of samples
+$\mathcal{S}_{m}$ of size $\mid\mathcal{S}_{m}\mid \equiv m$ is randomly chosen, such that $N\gg m$.
+Following this, the average error over these samples,
+</p>
+$$
+ E\left(\mathcal{S}_{m} \mid \ta\ \right) \equiv \frac{1}{m}\sum_{s_\alpha \in \mathcal{S}_m}{\varepsilon\left(s_{\alpha} \mid \ta\ \right)},
+ $$<p>
+is estimated.
+The minibatch gradient descent update for network parameters at learning step $t$,
+$\vec{\theta}_{t}$ and a learning rate, $\eta_{t}$, is then
+$$</p>
+<p>\ta_{t+1} = \ta_{t} - \eta_{t}\nabla_{\ta}E(\mathcal{S}_{m}\mid\ta_t).
+</p>
+$$
+The random selection of a finite minibatch of samples, $\mathcal{S}_{m}$ introduces a random component 
+into the dynamics defined by Eq.(sgd), thus individual learning trajectories in parameter space are 
+stochastic.
+Consequently, to understand the behavior of the network during training, I consider the time 
+evolution of probability distributions over parameter space.
+That is, if 
+$\fb(\ta_{t};\mathcal{S}_m) \equiv -\nabla_{\ta}E(\mathcal{S}_{m}\mid\ta_t)$ is defined as 
+the ``force'' acting on the state defined by parameters, $\vec{\theta}_t$, and the data probability distribution 
+of samples is $Q(\mathcal{S}_{m})$, the probability, $K(\vec{\theta}_{t+1}\mid\vec{\theta}_{t};\eta_{t})$ of 
+obtaining a parameter set $\ta_{t+1}$ at time $t+1$ given parameters $\vec{\theta}_{t}$, at time $t$ is
+$$<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) =
+\sum_{\bf f}{\delta\left(\vec{\theta}<em>{t+1} - \vec{\theta}</em>{t} -
+\mathbf{\Delta}({\bf f},\eta_{t})\right)P\left({\bf f}\middle|\vec{\theta}_{t}\right)}.
+$$
+Here, I have treated the force, ${\bf f}(\vec{\theta}_{t};\mathcal{S}_m)$ as a random variable given by a
+probability distribution, $P\big({\mathbf f}\mid\vec{\theta}_{t}\big)$.
+Treating the force as a random variable
+is justified, since in the minibatch method, a subset of samples $\mathcal{S}_m$ are randomly sampled, and
+the force is estimated from these samples.
+The total change due to this force over the time interval,
+$\eta_{t}$, is written as $\mathbf{\Delta}({\bf f},\eta_{t})$.
+Generally, if the force, ${\bf f}$ is not a random
+variable, $\mathbf{\Delta}({\bf f},\eta_{t}) \approx \eta_{t}{\bf f}$.
+However, for a random force,
+$\mathbf{\Delta}({\bf f},\eta_t)$ is also a random variable.</p>
+<p>Thus, in order to estimate the transition probability, $K$ in Eq.(trs), the probability,
+$P({\bf f}\vert\vec{\theta}_{t})$, and consequently the distribution of $\mathbf{\Delta}$ need to
+be estimated.
+I derive the distribution of $\mathbf{\Delta}$ in Appendix B.</p>
+<p>The probability distribution, $P({\bf f}\mid\vec{\theta}_{t})$, is defined as
+$$</p>
+<p>P\left({\bf f} \mid \vec{\theta}<em>{t}\right) \equiv \sum</em>{\mathcal{S}<em>m}{\delta\left({\bf f} +
+\nabla</em>{\theta}E(\mathcal{S}_{m}\mid\vec{\theta}<em>t)\right)Q(\mathcal{S}</em>{m})}.
+</p>
+$$
+In order to simplify Eq.(clta), the $\delta$-function is written in terms of its Fourier representation:
+$$<p>P\left({\bf f} \mid \vec{\theta}<em>{t}\right) =
+\int{\frac{d{\bf k}}{(2\pi)^{d}};
+Q(\mathcal{S}</em>{m})\exp\left[i{\bf k}\cdot\left({\bf f} -
+\frac{1}{m}\sum_{s_{a} \in\mathcal{S}<em>{m}}{{\bf f}\left(\vec{\theta}</em>{t};s_{a}\right)}\right)\right]}
+</p>
+$$
+Since samples are assumed to be chosen independently of each other, 
+$Q(\mathcal{S}_{m}) \equiv \prod_{s_{a}\in\mathcal{S}_{m}}{q(s_{a})}$.
+Define the characteristic
+function corresponding to the sample distribution as
+$$<p>\pi({\bf k}\mid\vec{\theta}) = -\log\sum_{s}{q(s)\exp\left{-i{\bf k}\cdot{\bf f}(\vec{\theta};s)\right}}.
+</p>
+$$
+Combining Eqs.(cltb) and (cltc) results in the following relation:
+$$<p>P\left({\bf f}\mid\vec{\theta}\right) = \frac{m}{(2\pi)^{d}}\int{d{\bf p};
+\exp\left{m\left[{i\bf p}\cdot{\bf f} - \pi({\bf p}\mid\vec{\theta})\right]\right}}
+</p>
+$$
+The characteristic function $\pi({\bf p}\mid\vec{\theta})$ can be written in the form of a cumulant expansion:
+$$<p>\pi({\bf p}\mid\vec{\theta}) = -i{\bf p}\cdot{\bf f}(\vec{\theta})  +
+\frac{1}{2}{\bf p}\cdot\mathbf{C}(\vec{\theta})\cdot{\bf p} + &hellip;.
+</p>
+$$
+Here, I have truncated the cumulant expansion to second order in ${\bf p}$, since the higher order terms 
+are expected to make small contributions.
+I have also ignored the zeroth order contribution, since it is $1$ 
+and constant.
+The first and second cumulants are defined as
+$$<p>{\bf f}(\vec{\theta}) \equiv \langle{\bf f}(\vec{\theta};s)\rangle_{s}, ;;;
+\mathbf{C}(\vec{\theta}) \equiv \langle{\bf f}(\vec{\theta};s)\circ {\bf f}(\vec{\theta};s)\rangle_{s} -
+{\bf f}(\vec{\theta})\circ{\bf f}(\vec{\theta}).
+</p>
+$$
+Here, the operator $\circ$ corresponds to elementwise multiplication, i.e 
+$\left(\mathbf{u}\circ\mathbf{v}\right)_{ij} =\mathbf{u}_{i}\mathbf{v}_{j}$.
+In words, the first order cumulant is the ``force'' (or negative gradient of the loss function) averaged over
+the sample distribution function and the second cumulant is the covariance tensor constructed from the 
+gradient of the loss function with respect to the sample distribution function $q(s)$.
+This average force 
+can also be written as the gradient of the free energy, or potential of mean force, as defined in Eq.(freeE):
+$$<p>\mathbf{f}(\ta) = -\left\langle\nabla_{\theta}\varepsilon (s\mid\ta)\right\rangle_{s} = -\nabla_{\theta}\mathcal{G}(\ta)
+$$</p>
+<p>Substitution of the truncated cumulant expansion, Eq.(clte) into Eq.(cltd) and integrating out
+the variables ${\bf p}$ shows that the random variables ${\bf f}$ obey the central limit theorem, with
+covariance matrices that depend on the state parameters $\vec{\theta}$:
+$$</p>
+<p>P\left({\bf f} \mid \vec{\theta}\right) =
+B_{m}(\vec{\theta})\exp\left{-\frac{m}{2}\left({\bf f} - {\bf f}(\vec{\theta})\right)\cdot\mathbf{C}^{-1}
+(\vec{\theta})\cdot\left({\bf f} - {\bf f}(\vec{\theta})\right)\right}
+</p>
+$$
+Here, $B_{m}$ is a normalization constant.
+I derive the probability distribution of $\mathbf{\Delta}$ in Appendix B. 
+On combining the distribution of $\mathbf{\Delta}$ with the the probability distribution in Eq.(cltf), I derive a closed form expression for the transition probability distribution $K(\vec{\theta}_{t+1}\mid\vec{\theta}_{t};\eta_{t})$ 
+to be
+$$<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) =
+\frac{B_m}{\eta_{t}}\int{d{\bf p}\exp\left[i{\bf p}\cdot\left(\frac{\vec{\theta}<em>{t+1} - \vec{\theta}</em>{t} }{\eta_{t}} - {\bf f}(\vec{\theta}_t)\right)</p>
+<ul>
+<li>\frac{1}{2m\eta_{t}}{\bf p}\cdot\mathbf{C}(\vec{\theta}_{t})\cdot{\bf p}\right]}.
+
+$$
+Integrating out ${\bf p}$ in Eq.(cltg), the propagator at short time intervals,$\eta_t$, and 
+approximating $\dot{\ta}_{t} \equiv \frac{1}{\eta_{t}} \left(\ta_{t+1} - \ta_{t}\right)$, the short time 
+propagator has the form:
+$$</li>
+</ul>
+<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) = \frac{B_{0}}{\eta_{t}}e^{-\eta_{t}\mathrm{L}(\dot{\ta}_{t};\ta_t)}.
+</p>
+$$
+The exponent, $\mathrm{L}$, has the form
+$$<p>\mathrm{L}(\dot{\ta}<em>{t},\ta_t) \equiv \frac{m}{2}\left(\frac{\ta</em>{t+1} - \ta_t}{\eta_t} - \mathbf{f}(\ta_t)\right)\cdot\mathbf{C}^{-1}(\ta_{t})\cdot\left(\frac{\ta_{t+1} - \ta_t}{\eta_t} - \mathbf{f}(\ta_t)\right).
+$$
+From Eq.(fp2), the propagator $K(\vec{\theta}_{t+1}\mid\vec{\theta}_{t};\eta_{t})$ has maximal contributions
+from the path, $\dot{\ta}_{t} = \mathbf{f}(\ta_{t})$, which corresponds to the method of gradient descent.
+However,
+other paths are also probable, albeit with reduced probability. Thus, the stochasticity of the minibatch SGD method,
+allows for lower probability events that could potentially enable the escape of the system from regions of local minima
+in parameter space.</p>
+<p>The likelihood of such events is also controlled by the covariance matrix, $\mathbf{C}$.
+If this matrix has large
+eigenvalues, then the propagator is ``flattened&quot; out, allowing for a greater range of fluctuations in the force, $\fb$
+relative to its mean, $\fb(\ta_{t})$, thus enabling trajectories other than the gradient descent trajectory to also have
+significant probability. However, small values of this matrix result in a sharply peaked distribution about the gradient
+descent trajectory, and other trajectories are relatively disfavored. Hence, the strength of the covariance matrix plays
+a critical role in controlling the training timescales over which regions of parameter space can be accessed. Consequently, a smaller variance in the force requires longer training
+times and vice versa.</p>
+<p>Eqs.(fp1) and (fp2) also make clear the role of the mini-batch size $m$. As $m \rightarrow \infty$ fluctuations away from the gradient descent trajectory are dampened, reducing the probability of escape once
+the learning process is trapped in a local minima of parameters.
+Hence, in addition to the practical considerations
+of efficiency involved in choosing minibatch SGD over a gradient descent estimated over all training samples, the choice of smaller mini-batches also enhances the sampling process in a loss surface with multiple minima.</p>
+<h3 id="equilibrium-and-steady-state-properties-of-sgd">Equilibrium and Steady State Properties of SGD<a hidden class="anchor" aria-hidden="true" href="#equilibrium-and-steady-state-properties-of-sgd">#</a></h3>
+<p>If $\sigma(\vec{\theta},t)$ is the probability distribution function of the parameters, $\vec{\theta}$ at
+time $t$, in the microscopic limit as $\eta_{t} \rightarrow 0$, I show in Appendix C that Eq.(cltg)
+can be transformed into an evolution equation for the probability distribution, and a Fokker-Planck equation
+is obtained as below:
+$$</p>
+<p>\frac{\partial}{\partial t}\sigma(\vec{\theta},t) = - \frac{\partial}{\partial\vec{\theta}}\cdot\left({\bf f}(\vec{\theta})\sigma\right) + \frac{1}{2m}\frac{\partial}{\partial\vec{\theta}}\cdot\mathbf{C}(\vec{\theta})\cdot\frac{\partial}{\partial\vec{\theta}};\sigma(\vec{\theta},t).
+</p>
+$$
+Since the steady state properties of the probability distribution function $\sigma(\vec{\theta},t)$ are of interest, 
+a standard approach to analyse steady state solutions of Eq.(fp) is to define a current:
+$$<p>{\bf J} \equiv {\bf f}(\vec{\theta})\sigma - \frac{1}{2m}\mathbf{C}(\vec{\theta})\cdot\boldsymbol{\nabla}\sigma .
+</p>
+$$
+With the definition, Eq.(fp1), the Fokker-Planck equation, (fp) becomes a continuity equation:
+$$<p>\frac{\partial\sigma}{\partial t} = - \boldsymbol{\nabla}\cdot{\bf J}(\vec{\theta},t).
+</p>
+$$
+Thus, a steady state probability distribution, $\sigma_{0}(\vec{\theta})$ should satisfy $\nabla\cdot{\bf J} = 0$.
+This condition is satisfied if either ${\bf J} = 0$ or ${\bf J} = \nabla\times\mathrm{F}$, where $\mathrm{F}$ is 
+some vector field.
+I first examine the existence of steady states given by the first condition, ${\bf J} = 0$, which I 
+refer to as the ``equilibrium" condition. Let $\sigma_{e}$ represent such an equilibrium probability distribution. 
+Then the equilibrium condition, ${\bf J} = 0$ translates to the equation:
+$$<p>{\bf f}(\vec{\theta}) = \frac{1}{2m}\mathbf{C}(\vec{\theta})\cdot\boldsymbol{\nabla}\ln\sigma_{e}(\ta).
+</p>
+$$
+Given that ${\bf f}(\vec{\theta}) \equiv -\nabla\mathcal{G}(\vec{\theta})$, Eq.(ss) 
+can be recast in the form
+$$<p>-\boldsymbol{\nabla}\mathcal{G}(\vec{\theta}) = \frac{1}{2m}\mathbf{C}(\ta)\cdot\boldsymbol{\nabla}\ln\sigma_{e}(\ta).
+</p>
+$$
+Eq.(ss0) shows that unless the covariance tensor, $\mathbf{C}$ is constant, i.e 
+$\mathbf{C}(\ta) = \mathbf{C}_{0}$, there is no equilibrium distribution $\sigma_{e}$ that satisfies the 
+condition ${\bf J} = 0$. This becomes clear upon integrating both sides of Eq.(ss0).
+By the properties of the gradient operator, the line integral of the right hand side between initial and final 
+points, $\{\ta_{i},\ta_{f}\}$ is evaluated to be
+$$<p>
+\oint_{\mathcal{C}}{\boldsymbol{\nabla}\mathcal{G}\cdot d\ta} = G(\ta_{f}) - G(\ta_{i}).
+</p>
+$$
+This line integral is independent of the specific curve $\mathcal{C}$ that is chosen, and instead solely is 
+a function of the initial and final points,$\{\ta_{i},\ta_{f}\}$, that $\mathcal{C}$ traverses between.
+On the 
+other hand, for non-constant $\mathbf{C}(\ta)$, the corresponding line integral of the left side of 
+Eq.(ss0) is
+$$<p>
+\oint_{\mathcal{C}}{d\ta\cdot\mathbf{C}(\ta)\cdot\boldsymbol{\nabla}\ln\sigma_{e}} = \mathrm{I}(\mathcal{C}).
+$$
+This integral is generally a function of the entire path $\mathcal{C}$.
+Hence, Eq.(ss0) cannot be satisfied
+by any choice of densities, $\sigma_{e}(\ta)$ unless $\mathbf{C}(\ta)$ is a constant.
+Consequently,
+the true probability distribution, $\Sigma(\ta)$, of the loss function cannot in general be an equilibrium
+distribution of the Fokker-Planck equation, Eqs.(fp) and (ss0).</p>
+<p>The weaker condition that a steady state distribution of Eq.(cont) satisfies is that the
+probability current is the curl of a vector field, i.e $\mathbf{J}_{s}(\ta) = \boldsymbol{\nabla}\times\mathrm{F}$.
+However, it can be shown, through simple substitution, that the Boltzmann distribution, Eq.(boltz1) is
+not a stationary distribution of Eq.(fp) either, and no function, $\mathrm{F}$ exists such that
+$\mathbf{J}_{s}(\ta) =  \boldsymbol{\nabla}\times\mathrm{F}$ satisfies Eq.(fp3) for a choice of
+$\sigma$, as the Boltzmann distribution, $\Sigma(\ta)$.
+Hence, for general covariances, $\mathbf{C}(\ta)$,
+the SGD method does not converge to the minima of the free energy of the loss distribution and the
+probability distribution of parameters generated by the minibatch SGD method does not converge to the
+true Boltzmann distribution, $\Sigma(\ta)$.</p>
+<p>I show that the conclusions regarding the lack of convergence of SGD to a stationary Boltzmann-Gibbs
+distribution also apply to SGD methods with momentum in Appendix D. In addition, the probability distribution
+induced by momentum-SGD also satisfies a generalized Fokker-Planck time evolution as shown in Appendix D.</p>
+<h3 id="local-minima-and-sgd">Local Minima and SGD<a hidden class="anchor" aria-hidden="true" href="#local-minima-and-sgd">#</a></h3>
+<p>Building on insights of [Ref: Hochreiter:1996] regarding the shape of minima of the loss surface,
+[Ref: Keskar:2017] have argued that SGD algorithms that use large-batch training sets often result in
+parameters that correspond to sharp minima that generalize poorly.
+I use the formalism developed
+here to analyse the generalization properties of SGD.</p>
+<p>From the discussion of pure gradient descent, and the property that the transition probability,
+Eq.(fp1), becomes concentrated around the gradient descent trajectory in the limit of infinite mini-batch size,
+$m \rightarrow\infty$, it is clear that gradient descent from a given set of initial parameters, $\ta(0)$ results
+in parameters corresponding to a nearby local minimum.
+This insight ([Ref: Stillinger:1983, Stillinger:1984]) was first
+developed to approximate the partition function of glassy systems.
+I adapt the formalism of [Ref: Stillinger:1983]
+to understand the properties of local minima attained by the SGD method in the large batch limit.</p>
+<p>Following [Ref: Stillinger:1983], the space $\mathcal{F}_{\ta}$  of parameters can be divided into equivalence
+classes according to the minima that gradient descent trajectories lead to.
+In particular, define:
+$$</p>
+<p>\Theta_{\alpha} \equiv \left{\ta\mid \ta = \ta(0) ; ;
+\dot{\ta}(t) = \mathbf{f}[\ta(t)]; ;
+\lim_{t\rightarrow\infty}{\ta(t)} = \ta_{\alpha}\right}
+</p>
+$$
+ Here, $\ta_{\alpha}$ are local minima reached by the gradient descent trajectory that are ``nearest'' to the 
+ initial conditions, $\ta$.
+Thus, the space of parameters is written as a union of equivalence classes over 
+ all minima, $\ta_{\alpha}$, i.e,
+ $$<p>\mathcal{F}<em>{\ta} = \bigcup\limits</em>{\alpha}^{} {\Theta_{\alpha}}
+</p>
+$$
+ Based on the grouping into equivalence classes, the partition function, $\mathcal{Z}_{0}$ is rewritten as:
+ $$<p>\mathcal{Z}<em>{0} = \sum</em>{\alpha}{e^{-\beta\mathcal{G}(\ta_{\alpha})}\sum_{\ta\in\Theta_{\alpha}}{e^{-\beta\Delta\mathcal{G}(\ta;\ta_{\alpha})}}}
+</p>
+$$
+ Here, $\Delta\mathcal{G}(\ta ;\ta_{\alpha}) \equiv \mathcal{G}(\ta) - \mathcal{G}(\ta_{\alpha})$.
+We define:
+ $$<p>\Omega(\ta_{\alpha}) \equiv  \sum_{\ta\in\Theta_{\alpha}}{e^{-\beta\Delta\mathcal{G}(\ta;\ta_{\alpha})}}
+</p>
+$$
+ $\Omega$ can be interpreted as the effective number of states present in each equivalence class, or alternately
+ as the effective ``volume'' of the equivalence class, $\Theta_{\alpha}$.
+The volume or size of each equivalence 
+ class is a measure of generalization of models parameterized by the corresponding minima.
+The equilibrium probability 
+ of parameters belonging to a given equivalence class, $\Theta_\alpha$ is:
+ $$<p>
+p(\Theta_{\alpha}) = \frac{1}{\mathcal{Z}<em>{0}}\Omega(\ta</em>{\alpha})e^{-\beta\mathcal{G}_{\alpha}}
+</p>
+$$
+ Thus, if the index of the equivalence class corresponding to the minimum free energy is $\alpha = 0$, the 
+ relative equilibrium probability of belonging to an equivalence class, $\alpha$ to that of the minimal free 
+ energy is:
+ $$<p>\frac{p(\Theta_{\alpha})}{p(\Theta_0)} = \frac{\Omega_{\alpha}}{\Omega_0}e^{-\beta\Delta\mathcal{G}(\ta_\alpha; \ta_0)}
+$$
+The relative probability consists of two contributions, one the relative sizes of each equivalence class, as defined as
+the ratios of $\Omega$, and the second is the free energy difference, (i.e relative ``heights&rsquo;&rsquo;) of
+the local minima and the
+minimal free energy state.</p>
+<p>The effective number of states $\Omega_{\alpha}$ is approximated by a harmonic approximation around the local
+minimum, i.e:
+$$</p>
+<p>\Delta\mathcal{G}(\ta ; \ta_{\alpha}) \approx \frac{1}{2}\left(\ta - \ta_{\alpha}\right)\cdot\mathbf{\nabla}^{2}\mathcal{G}(\ta_{\alpha})\cdot\left(\ta - \ta_\alpha\right)
+</p>
+$$
+Here, $\mathbf{\nabla}^{2}\mathcal{G}(\ta_\alpha)$ is the Hessian matrix of the free energy, $\mathcal{G}$ evaluated at the local minimum, $\ta_\alpha$.
+With this approximation, we obtain the volume of the equivalence class as:
+  $$<p>\log\Omega_{\alpha} \approx \frac{d}{2}\log\left(\frac{2\pi}{\beta}\right) -  \frac{1}{2}\log\det\mathbf{\nabla}^{2}\mathcal{G}(\ta_\alpha)
+$$
+Eq.(equiv5) shows that the volume of an equivalence class, and thus the generalizability of models with parameters drawn from or near the minima of such an equivalence class depends on the determinant of
+the Hessian of the free energy at the minimum.
+At a minimum, this determinant measures the curvature of the
+free energy surface.
+Thus, for sharp minima, this determinant is large, and the effective volume of the equivalence
+class is correspondingly small, and so such a minimum shows poorer generalization than a shallower minimum.</p>
+<p>However, [Ref: Dinh:2017] have shown that a loss surface can be transformed through an appropriate nonlinear transformation of the parameters, $\ta$, such that minima can be made either <code>sharp'' or </code>shallow&rsquo;&rsquo;, i.e the generalization measures based on ``sharpness&rsquo;&rsquo; of minima are not representation invariant.
+Although, intuitively,
+the relative sizes of the equivalence classes as defined in Eq.(equiv3) could be considered as measures of generalization, the quantities defined by Eqs.(equiv3) and (equiv5) are similarly not invariant under a transformation of parameters.
+As noted by [Ref: Dinh:2017], the lack of representation invariance is because
+current measures of generalization do not account for the intrinsic geometry of the loss surface, and implicitly
+assume a cartesian geometry.</p>
+<p>Here, in order to account for this intrinsic geometry, I first define the summation, Eq.(summation).
+Let $\mathbf{g}(\ta)$ be the metric induced by the data. Then, Eq.(summation) can be written as:
+$$</p>
+<p>\mathcal{Z}<em>{0} = \sum</em>{\alpha}{e^{-\beta\mathcal{G}(\ta_\alpha)}\int_{\Theta_{\alpha}}{\sqrt{\mid\mathbf{g}(\ta)\mid}\prod_{k=1}^{d}{d\ta_{k}};
+e^{-\beta\Delta\mathcal{G}(\ta;\ta_\alpha)}}}
+</p>
+$$
+  $\vert\mathbf{g}(\ta)\vert$ is the determinant of the metric, $\mathbf{g}$, and the volume form, 
+  $\sqrt{\mid\mathbf{g}(\ta)\mid}\prod_{k=1}^{d}{d\ta_{k}}$ is invariant under bijections, 
+  $\vec{\nu}(\vec{\eta}) = \ta$.
+In addition, define the coordinate transformation matrices:
+  $$<p>
+\mathbf{T}(\vec{\eta}) \equiv \nabla_{\eta}\nu = \nabla_{\eta}\ta; \text{and};
+\mathbf{T}^{-1}(\vec{\eta})
+= \nabla_{\ta}\vec{\eta} = \nabla_{\nu}\vec{\eta}.
+</p>
+$$ 
+  The second derivative of $\mathcal{G}$ transforms as: 
+  $$<p>
+\nabla^{2}\mathcal{G}(\ta) = \mathbf{T}(\vec{\eta})\cdot\mathbf{\nabla}^{2}<em>{\eta}\mathcal{G}[\vec{\nu}(\vec{\eta})]\cdot\mathbf{T}(\vec{\eta})
+$$
+  Using a Taylor series approximation to first order, the difference $\ta - \ta_{\alpha} \equiv \vec{\nu}(\vec{\eta}) - \vec{\nu}(\vec{\eta}_\alpha)$ transforms as
+  $$
+\vec{\nu}(\vec{\eta}) - \vec{\nu}(\vec{\eta}</em>\alpha) \approx \left(\vec{\eta} - \vec{\eta}<em>{\alpha}\right)\cdot\mathbf{T}^{-1}(\vec{\eta}</em>{\alpha}).
+</p>
+$$
+ Thus, upon a change of representation, the coordinate transformation matrices cancel each other out and 
+ Eq.(equiv4) becomes:
+  $$<p>
+\Delta\mathcal{G}(\nu(\vec{\eta}) ; \nu(\vec{\eta}<em>{\alpha})) \approx \frac{1}{2}\left(\vec{\nu} - \vec{\nu}</em>{\alpha}\right)\cdot\nabla^{2}\mathcal{G}(\vec{\eta}<em>{\alpha})\cdot\left(\vec{\nu} - \vec{\nu}</em>{\alpha}\right)
+$$
+I.e the quadratic approximation, Eq.(equiv4) retains representation invariance.</p>
+<p>The definition, Eq.(rie), and the quadratic approximation suggest that a reparametrization
+invariant measure of generalization is
+$$</p>
+<p>\tilde{\Omega}<em>{\alpha} \equiv \int{\sqrt{\mid\mathbf{g}(\ta)\mid}\prod</em>{k=1}^{d}{d\ta_{k}};
+\exp\left(-\frac{\beta}{2}\left(\ta - \ta_{\alpha}\right)\cdot\mathbf{\nabla}^{2}\mathcal{G}(\ta_{\alpha})\cdot\left(\ta - \ta_\alpha\right)\right)}
+</p>
+$$
+  The discussion so far is valid for an arbitrarily specified metric, $\mathbf{g}$.
+However, since each value of $\ta$ corresponds to a particular choice of probability distribution over the data, $p(s,\ta)$, the space of parameters corresponds to the space of probability distributions, and thus the metric, $\mathbf{g}(\ta)$, describes a distance between probability distributions.
+From this argument, $\mathbf{g}(\ta)$ is equivalent to the Fisher information 
+metric:
+ $$<p>
+\mathbf{g}(\ta) = \mathcal{I}<em>{p}(\ta) \equiv \sum</em>{s}{p(s\mid\ta)\nabla\log p(s\mid\ta)\circ\nabla\log p(s\mid\ta)}.
+</p>
+$$
+Here, the probability, $p(s\mid\ta)$ is as defined by Eq.(combin4), with $f$ replaced by $\ta$, i.e
+$$<p>
+p(s\mid\ta) = \frac{1}{\mathcal{Z}(\ta)}q(s)e^{-\beta\varepsilon(s\mid\ta)}.
+</p>
+$$
+The choice, $\mathbf{g} = \mathcal{I}_{p}(\ta)$, results in the familiar prior first defined by [Ref: Jeffreys:1946], 
+in Eq.(meas1).
+Furthermore, substituting $p(s\vert\ta)$ into the expression for the Fisher Information matrix, 
+shows that it is proportional to the covariance matrix, $\mathbf{C}(\ta)$, i.e
+$$<p>\mathcal{I}_{p}(\ta) = \beta^{2}\mathbf{C}(\ta).
+</p>
+$$
+I approximate Eq.(meas1) by substituting Eq.(fisher) for the metric, $\mathbf{g}$ and replacing it
+ by its value at $\ta_\alpha$.
+$$<p>\Omega_\alpha \approx \sqrt{\mathcal{I}(\ta_\alpha)}\int{d\ta_{\alpha};e^{-\frac{\beta}{2}\left(\ta - \ta_{\alpha}\right)\cdot\mathbf{\nabla}^{2}\mathcal{G}(\ta_{\alpha})\cdot\left(\ta - \ta_\alpha\right)}} =
+\left(\frac{2\pi}{\beta}\right)^{\frac{d}{2}}\sqrt{\frac{\mid\mathcal{I}(\ta_\alpha)\mid}{\mid\nabla^{2}\mathcal{G}(\ta_\alpha)\mid}}.
+</p>
+$$
+ In addition, the Hessian matrix of $\mathcal{G}(\ta_\alpha)$ can be shown to be related to the Fisher information as:
+ $$<p>
+\beta\nabla^{2}\mathcal{G}<em>\alpha = \beta\sum</em>{\alpha}{p(s\mid\ta_{\alpha})\nabla^{2}\varepsilon(s\mid\ta)} - \mathcal{I}(\ta)
+</p>
+$$
+Defining the matrix $\mathrm{H}(\ta) \equiv \left\langle\nabla^{2}\varepsilon(s\mid\ta)\right\rangle_{s}$, and using 
+the identity, $\log\mid\mathrm{A}\mid = \Tr\log\mathrm{A}$ along with the relation, Eq.(fisher) gives:
+ $$<p>\log\Omega_\alpha \approx \frac{d}{2}\log 2\pi + \frac{1}{2}\Tr\left{\log\left(\frac{1}{\beta}\mathrm{H}^{-1}(\ta_\alpha)\mathcal{I}(\ta_\alpha)\right) - \log\left( \mathrm{1} - \frac{1}{\beta}\mathrm{H}^{-1}(\ta_\alpha)\mathcal{I}(\ta_\alpha)\right)\right}.
+</p>
+$$
+ Thus, the measure of generalization depends both on the intrinsic geometry of the data space, as exemplifed by
+ the Fisher information metric, and as before, inversely on the square root Hessian determinant of the free energy.
+The Fisher determinant in Eq.(gena) plays the role of a Jeffreys' prior, to maintain representation invariance, 
+ while the Hessian of the free energy measures the ``sharpness'' of a local minimum as before.
+This analysis suggests
+ that generalization is greater when the overall curvature of the free energy at a local minima is low, given an intrinsic
+ parameter geometry as defined by the Fisher metric, $\mathcal{I}(\ta)$.
+Interestingly, if a choice of coordinates are 
+possible such that the curvature of the free energy is similar at different minima, then the generalizability depends 
+on the variance in the gradient of the loss function at these minima, as embodied by the Fisher information, 
+$\mathcal{I}(\ta)$.
+%$$<p>
+%
+%\Omega\left[{\mathbf{\theta}}\right] = 2m\0int_{\vec{\theta}<em>{i}}^{\vec{\theta}</em>{f}}{d\vec{\theta}\cdot\mathbf{C}^{-1}(\vec{\theta})\cdot\boldsymbol{\nabla}\mathcal{G}(\vec{\theta})},
+%</p>
+$$
+%is path dependent. Consequently, the solution to Eq.(ss) is obtained upon rewriting it as:
+%$$<p>
+%
+%\frac{\partial\sigma_{0}}{\partial\vec{\theta}} = -2m\mathbf{C}^{-1}(\vec{\theta})\cdot{\bf f}(\vec{\theta})\sigma_{0}(\vec{\theta})
+%</p>
+$$
+%Eq.(hk) has a path integral solution given by the Feynman-Kac theorem as:
+%$$<p>
+%
+%\sigma_{0}(\vec{\theta}) = \left\langle\delta\left(\vec{\theta} -\vec{\theta}<em>f\right)\exp\left(-\Omega\left[{\mathbf{\theta}}\right]\right)\right\rangle</em>{\ta_{i}\rightarrow\ta_f}
+%$$
+%The average $\langle ...\rangle_{\ta{i}\rightarrow\ta_f}$ is an average over all paths in parameter space originating at %the initial parameters $\ta_i$ and ending at $\ta_f$, and over an initial probability over the parameters $\ta_i$.
+On the other
+%hand if we assume that the Fokker-Planck equation, Eq.(fp) has a steady state solution written in the form:</p>
+<h2 id="illustrative-examples">Illustrative Examples<a hidden class="anchor" aria-hidden="true" href="#illustrative-examples">#</a></h2>
+<p>I estimate the average force, $\fb(\ta)$ and covariance, $\mathbf{C}(\ta)$ for the loss functions used in linear
+regression, and in maximum likelihood estimation.
+I show that in both these cases the covariance matrix is
+generally non-zero, and is nonlinear in the parameters, $\ta$.</p>
+<h3 id="linear-regression">Linear Regression<a hidden class="anchor" aria-hidden="true" href="#linear-regression">#</a></h3>
+<p>Consider the simple case of a linear regression problem, where for each sample, $s$, we have input-output pairs,
+$\{\vec{x}(s),\vec{y}(s)\}$ and a loss function of the form:
+$$</p>
+<p>\varepsilon(\ta;s) = \frac{1}{2}\norm{\vec{y}(s) - \ta\cdot\vec{x}(s)}^{2}
+</p>
+$$
+The force $\fb(\ta;s)$ is calculated as:
+$$<p>\fb(\ta;s) = \vec{x}(s)\left[\ta\cdot\vec{x}(s) - \vec{y}(s)\right]
+</p>
+$$
+The free energy is then:
+$$<p>\mathcal{G}(\ta) = -\log\left[\sum_{s}{q(s)e^{-\beta e(\ta;s)}}\right]
+</p>
+$$
+The optimal parameters are then given by $\ta^* = \arg\min_{\ta} \mathcal{G}(\ta)$.
+Thus, this is equivalent to finding a solution
+to the equation:
+$$<p>\left\langle\fb(\ta;s)\right\rangle = 0
+</p>
+$$
+On using Eq. (lfb1) in Eq.
+(lfb3) we get that $\ta^*$ satisfy:
+$$<p>\ta^*\cdot\left\langle\vec{x}(s)\vec{x}(s)\right\rangle = \left\langle\vec{y}(s)\vec{x}(s)\right\rangle
+</p>
+$$
+Defining ${\bf X} \equiv \left\langle\vec{x}(s)\vec{x}(s)\right\rangle$ and 
+${\bf Y} \equiv \left\langle\vec{y}(s)\vec{x}(s)\right\rangle$, and replacing the ensemble averages by empirical averages over samples, I obtain the classical solution to the linear regression problem:
+$$<p>\ta^* = {\bf X}^{-1}\cdot{\bf Y}
+</p>
+$$
+On the other, the SGD algorithm results in a time evolution given by a general Fokker-Planck equation, with 
+diffusion tensor given by:
+$$<p>\mathbf{C}(\ta) = \mathbf{\Gamma}^{\mu\nu}\theta_{\mu}\theta_{\nu} + 2\mathbf{\Lambda}^{\mu}\theta_{\mu} + \mathbf{D}
+</p>
+$$
+I have used the Einstein summation convention in Eq.(fb6) where repeated indices are assumed to be summed over.
+The tensors $\mathbf{\Gamma}$ and $\mathbf{\Lambda}$ are given by $4^{th}$-order correlations in the 
+sample variables.
+$$<p>
+\begin{aligned}</p>
+<p>\mathbf{\Gamma}^{\mu\nu} = \left\langle\vec{x}(s)\vec{x}(s)x_{\mu}(s)x_{\nu}(s)\right\rangle - \left\langle\vec{x}(s)x_{\mu}(s)\right\rangle\left\langle\vec{x}(s)x_{\nu}(s)\right\rangle \
+\mathbf{\Lambda}^{\mu} = \left\langle\vec{y}(s)x_{\mu}(s)\vec{x}(s)\vec{x}(s)\right\rangle - \left\langle\vec{y}(s)x_{\mu}(s)\right\rangle\left\langle\vec{x}(s)\vec{x}(s)\right\rangle \
+\mathbf{D} = \left\langle\vec{y}(s)\vec{x}(s)\vec{y}(s)\vec{x}(s)\right\rangle - \left\langle\vec{y}(s)\vec{x}(s)\right\rangle\left\langle\vec{y}(s)\vec{x}(s)\right\rangle .
+\end{aligned}
+</p>
+$$
+It is clear from this that the steady state distribution for the Fokker-Planck equation with the covariance matrix 
+given by Eq.(lfb7) is approximately Boltzmann only if the tensor $\mathbf{D}$ is much bigger than the 
+other two terms, i.e when the quartic correlations between input variables are much smaller than the correlations between input and output variables.
+This condition is not generally obeyed. 
+%### Maximum Likelihood
+%We estimate the force and covariance tensors for a second, commonly used loss function, to further elucidate the 
+%noise contributions to the dynamics.
+Consider a learning model where a statistical model is specified to evaluate a probability 
+%distribution, $p(s;\ta)$ for each sample $s$.
+Let the true probability distribution being modeled be $\zeta(s)$. Then, define a 
+%loss function
+%$$<p>
+%
+%\varepsilon(s;\ta) \equiv \log\left[\frac{\zeta(s)}{p(s;\ta)}\right]
+%</p>
+$$ 
+%The asymptotic average loss function is then
+%$$<p>
+%
+%\mathcal{G}(\ta) = \left\langle\varepsilon(s;\ta)\right\rangle_{\zeta} = \sum_{s}{\zeta(s)\log\left[\frac{\zeta(s)}{p(s;\ta)}\right]} = D(\zeta\mid\mid p)
+%</p>
+$$
+%Correspondingly the average force is given by:
+%$$<p>
+%
+%\fb(\theta) = \left\langle\frac{\nabla p(s;\ta)}{p(s;\ta)}\right\rangle_{\zeta}
+%</p>
+$$
+%The covariance tensor, $\cb$, is given by the Fisher information:
+%$$<p>
+%
+%\mathbf{C}(\ta) = \left\langle\fracpartial{\ln p(s;\ta)}{\ta}\fracpartial{\ln p(s;\ta)}{\ta}\right\rangle_{\zeta}
+%$$
+%The Fisher information tensor has the properties of a metric tensor.
+Furthermore, in general, the covariance,
+%$\mathbf{C}(\ta)$ is positive definite. This  implies that $\mathbf{C}(\ta)$ can be generally interpreted as a metric
+%tensor.</p>
+<h3 id="geometric-properties-of-the-covariance">Geometric Properties of the Covariance<a hidden class="anchor" aria-hidden="true" href="#geometric-properties-of-the-covariance">#</a></h3>
+<p>The covariance matrix, $\cb$ is positive definite, and symmetric.
+I define an inner product that depends on $\cb$ as follows:
+$$</p>
+<p>\left\langle{\bf v},{\bf u}\right\rangle_{\mathbf{c}} \equiv {\bf v}\cdot{\cb}\cdot{\bf u}
+</p>
+$$
+The norm of an arbitrary vector, ${\bf v}(\ta)$ is then $\norm{{\bf v}(\ta)}^{2} \equiv \langle{\bf v},{\bf v}\rangle_\mathbf{c}$.
+Then, it can be shown for arbitrary vectors ${\bf u}$ and ${\bf v}$, using the Cauchy-Schwarz inequality that:
+$$<p>\norm{{\bf v} + {\bf u}}^{2} = \norm{\bf v}^{2} + \norm{\bf u}^{2} + 2\langle{\bf v}, {\bf u}\rangle \le \left(\norm{\bf v} + \norm{\bf u}\right)^{2}
+</p>
+$$
+In other words, the covariance matrix $\cb$ can be treated as a metric, since Eq.(inner1) implies that such a metric satisfies the
+triangle inequality.
+Additionally, for a given sample $s$, changes in the loss function can be represented as:
+$$<p>
+d\varepsilon(s,\ta) = \nabla\varepsilon\cdot d\ta = \mathbf{f}(\ta,s)\cdot d\ta
+</p>
+$$
+Thus, upon defining $\xi(\ta;s) \equiv \varepsilon(s,\ta) - \langle \varepsilon(s,\ta)\rangle_{s}$, we have
+$$<p>
+d\xi = \left({\bf f}(\ta;s) - {\bf f}(\ta)\right)\cdot d\ta
+</p>
+$$
+I define a second inner product as an expectation value over the distribution of samples: 
+$$<p>
+\left\langle{\bf v},{\bf u}\right\rangle_{s} = \langle{\bf v}(s)\cdot{\bf u}(s)\rangle_{s}
+</p>
+$$
+Then, 
+$$<p>
+\norm{d\xi}^{2} = \sum_{ij}{\mathbf{C}<em>{ij}(\ta)d\theta</em>{i};
+d\theta_{j}} = \left\langle d\ta,d\ta\right\rangle_{\mathbf{c}}
+</p>
+$$
+This has a nice interpretation in that average mean square changes in the error, are equal to the infinitesimal ``distance"
+covered in parameter space, whose metric is given by the covariance, $\mathbf{C}(\ta)$. One can similarly rewrite the 
+Fokker-Planck equation, Eq.(boltz1) in terms of the inner product in parameter space as
+$$<p>\partial_{t}\sigma = \left\langle\nabla,\left[\mathbf{C}^{-1}\cdot\sigma\nabla\mathcal{G} + \frac{1}{2m}\nabla\sigma\right]\right\rangle_{\mathbf{c}} .
+$$
+Eq.(curve) suggests a geometric interpretation for the Fokker-Planck equation, and more specifically the conditions that should
+be satisfied for it to have an equilbrium distribution, rather than a steady state distribution.  The first term in the right hand side of
+Eq.(curve) is independent of
+the metric, $\mathbf{C}$, while the second depends on this choice. Thus, a modification that
+would ensure that both terms behave similarly would possibly allow for an equilibrium distribution.</p>
+<h2 id="modified-sgd-natural-gradients">Modified SGD: Natural Gradients<a hidden class="anchor" aria-hidden="true" href="#modified-sgd-natural-gradients">#</a></h2>
+<p>The present analysis of the minibatch SGD algorithm has shown that the resulting dynamics of the associated probability distribution function over parameters satisfies a generalized Fokker-Planck equation, with diffusion
+tensors that are themselves parameter dependent.
+The diffusion tensors also act as a metric over a curved
+Riemannian manifold, and both the stationarity condition, Eq.(ss) and the analysis of specific examples
+suggest that SGD can be interpreted as a diffusive Langevin equation on a curved space, with the curvature of
+this space naturally induced by the geometric structure of the sample space.
+[Ref: Amari:1998] defined a ``natural&quot; gradient in a Riemannian space with metric $\mathbf{G}$ as
+$$</p>
+<p>\tilde{\nabla}_{\mathbf{G}}\mathcal{G}(\ta) \equiv \mathbf{G}^{-1}\cdot\nabla\mathcal{G}(\ta),
+</p>
+$$
+and proved that the natural gradient represents the direction of steepest descent in this curved space. Upon 
+using the definition of a natural gradient, the steady state condition for the Fokker-Planck equation, Eq.(ss) 
+can be rewritten as
+$$<p>\fracpartial{\ln\sigma_{0}}{\ta} = -2m\tilde{\nabla}_{\mathbf{C}}\mathcal{G}(\ta).
+</p>
+$$
+In other words, the direction of change in the steady state probability distribution is parallel to the natural 
+gradient in a space with a metric given by the covariance tensor, $\mathbf{C}(\ta)$. Thus, in order to obtain a 
+dynamics with a diffusion tensor that is independent of the 
+parameters, $\ta$, one can locally ``flatten" the 
+SGD time propagation by appropriately scaling the force.
+This is equivalent to modifying the SGD method by 
+the following modified natural gradient descent algorithm:
+$$<p>\ta_{t+1} = \ta_t + \eta_{t}\mathcal{A}(\ta)\cdot\fb(\ta;S_m)
+</p>
+$$
+As before, $\fb(\ta;S_{m})$ is a random variable with a distribution given by the central limit theorem.
+Thus, 
+following Eq.(fp2), the modified propagator for the dynamics due to Eq.(msgd) is
+$$<p>\mathcal{K}(\ta_{t+1}\mid\ta_{t};\eta_t)  = \mathcal{K}<em>{0}\exp\left[-\frac{1}{2}\left(\frac{\ta</em>{t+1} - \ta_t}{\eta_t} - \mathcal{A}\fb(\ta)\right)\mathbf{C}<em>{ef}^{-1}(\ta)\left(\frac{\ta</em>{t+1} - \ta_t}{\eta_t} - \mathcal{A}\fb(\ta)\right)\right].
+</p>
+$$
+Here, $\mathcal{K}_{0}$ is a normalization factor, and the effective covariance tensor is 
+$$<p>\mathbf{C}_{ef}(\ta) = \frac{1}{m}\mathcal{A}^{T}(\ta)\mathbf{C}(\ta)\mathcal{A}(\ta)
+</p>
+$$
+I impose the constraint that $\mathcal{A}^{T} = \mathcal{A}$, i.e $\mathcal{A}$ is symmetric.
+Under these 
+dynamics, the steady state distribution $\tilde{\sigma}(\ta)$ satisfies the condition:
+$$<p>\fracpartial{\ln\tilde{\sigma}}{\ta} = -2m\mathbf{C}^{-1}_{ef}\cdot\left(\mathcal{A}(\ta)\nabla\mathcal{G}(\ta)\right)
+</p>
+$$
+Using the definition of $\mathbf{C}_{ef}$ in Eq.(ss2), the steady state condition for modified SGD becomes
+$$<p>\fracpartial{\ln\tilde{\sigma}}{\ta} = -2m\mathbf{C}^{-1}(\ta)\mathcal{A}^{-1}(\ta)\nabla\mathcal{G}(\ta).
+</p>
+$$
+$A$ is chosen to be 
+$$<p>\mathcal{A} = \frac{1}{a}\mathbf{C}^{-1}(\ta),
+</p>
+$$ 
+Eq.(fisher) shows that the covariance tensor $\mathbf{C}(\ta)$ is proportional by a constant to the Fisher Information, $\mathcal{I}(\ta)$, which is a natural metric on statistical spaces ([Ref: Chentsov:1978,Dowty:2018]), 
+and so Eq.(nat) becomes:
+$$<p>\mathcal{A} = \frac{\beta^{2}}{a}\mathcal{I}_{p}^{-1}(\ta).
+</p>
+$$
+From Eqs.(nat) and (nat1), the steady state condition under modified SGD becomes
+$$<p>
+\begin{aligned}</p>
+<p>\fracpartial{\log \tilde{\sigma}}{\ta} = -\frac{2m}{a}\nabla\mathcal{G}(\ta) ;;  \text{or}\
+\tilde{\sigma}(\ta) \propto \exp\left(-\frac{2m}{a}\mathcal{G}(\ta)\right).
+\end{aligned}
+$$
+Choosing the constant $a$ such that $\frac{2m}{a} = \beta$ results in the stationary distribution of the modified, natural gradient SGD, dynamics becoming identical to the true distribution, Eq.(boltz1).
+This also provides an additional interpretation for the mini-batch size, $m$, as an annealing parameter.
+As $m$ increases, the minimal parameters become close to the values possible for the absolute minimal loss, with the tradeoff being that training times correspondingly will have to correspondingly increase to obtain optimal parameter values.
+Thus, the minibatch size can also be treated as an inverse temperature parameter in a simulated annealing context, where an initial SGD
+is run using a relatively small minibatch size, and succeeding iterations are run with gradually increasing minibatch
+size.</p>
+<h2 id="conclusions">Conclusions<a hidden class="anchor" aria-hidden="true" href="#conclusions">#</a></h2>
+<p>In this work, I have shown that the average loss satisfies an exponential (Gibbs-Boltzmann) distribution for
+large sample sizes, and that training a machine learning algorithm is equivalent to minimize the corresponding
+free energy of the Gibbs-Boltzmann distribution generated by the error function of the algorithm.
+Given this requirement, I have found the surprising result that the mini-batch stochastic gradient descent
+algorithm does not necessarily result in parameters that minimize the free energy.
+Rather, the SGD method
+generates probability distributions that satisfy a general Fokker-Planck equation, with diffusion tensors that are parameter dependent.
+Due to this parameter dependence, the steady state probability of the Fokker-Planck
+equation is different from the Boltzmann-Gibbs distribution that the average loss satisfies.
+To my knowledge,
+this contribution is a novel finding and will aid in interpreting the many experiments that have attempted to clarify
+the nature of the SGD method.</p>
+<p>I have also made an explicit connection between the SGD method and Information Geometry.
+I have shown
+that the SGD method corresponds to a diffusion in a curved space, whose metric is an intrinsic property of the underlying data, and the choice of loss functions.
+The diffusion tensor that governs the Fokker-Planck evolution
+of the corresponding probability density is proportional to this metric, and induces a ``natural gradient&quot; on the
+curved space in the sense defined by Amari. I have shown that by a simple and intuitive modification of the SGD method, results in stationary distributions that are consistent with the Boltzmann-Gibbs distribution of the
+average loss. Thus, I suggest that this modified gradient descent method is likely to have better convergence properties for training a machine learning algorithm. However, it is worth noting that there is a tradeoff involved,
+since the modified method requires the
+explicit computation of the inverse diffusion tensor at each timestep, and
+this could place an additional computational burden on the practical implementation of the modified method. The
+arguments for SGD are easily generalized to SGD with momentum, and the momentum based SGD also
+demonstrates similar geometric structure. Although I have not explicitly considered generalized variants of the
+SGD method such as Nesterov&rsquo;s method ([Ref: Nesterov:2013]), I expect that the insights regarding the geometric contributions implicit in SGD will apply to these variants as well, since sampling the average force from minibatches induces dynamics in a space whose geometric structure is informed by
+the underlying data, and the choice of the
+loss function.
+Thus, I expect that this work will have value in informing the interpretation and understanding of more general SGD based methods.
+%This implies that there is
+%no universal steady state solution to Eq.(fp), and the probability distribution over parameters will generally depend
+%on the parameters chosen at the initial stage of training.
+In the special case where the covariance tensor,
+%$\mathbf{C}(\vec{\theta})$ is independent of $\vec{\theta}$, the mini-batch SGD algorithm converges to a Boltzmann
+%distribution over the average loss, $\mathcal{G}(\vec{\theta})$, in agreement with the true distribution of loss values
+%that we obtained based on large deviations arguments.
+Thus, we argue that mini-batch SGD does not converge
+%to the expected minimal training parameters in general.
+Instead, we will attempt to establish conditions under which
+%steady state properties can be extracted from the SGD algorithm.
+% Acknowledgements should go at the end, before appendices and references</p>
+<p>\acks{I thank Dr. Sandeep Somani and Dr. Luca Larini for valuable discussions.
+I am grateful to SEPTA, Pennsylvania
+and the Lansdale-Doylestown branch for providing a hospitable environment during which a part of this work was done.}</p>
+<p>% Manual newpage inserted to improve layout of sample file - not
+% needed in general before appendices/bibliography.</p>
+<p>\appendix</p>
+<h2 id="appendix-a">Appendix A<a hidden class="anchor" aria-hidden="true" href="#appendix-a">#</a></h2>
+<p>The theory of large deviations can be applied to derive the probability distributions for the average loss,
+in the asymptotic limit of large sample numbers, $n$, i.e as $n\rightarrow\infty$.
+Here, for the sake of completeness,
+we sketch an informal derivation of the results in this framework using steepest descent methods.
+These can be
+proved rigorously, using mathematical arguments beyond the scope of this work, and a description of these
+arguments can be found in [Ref: Varadhan:2008, Ellis:2008].
+The derivations below are fairly standard, and
+can also be found in some form or the other in literature.</p>
+<p>Given a loss function, $\varepsilon(s \vert f)$ and an average loss, $\mathrm{E}_{n}(f)$ over $n$ randomly chosen
+samples, the probability of observing a given loss $E$ is:
+$$</p>
+<p>P\left[E = \mathrm{E}<em>{n}(f)\right]  = \sum</em>{{s_{i}}}{Q\left({s_{i}}\right)\delta\Big[E - \frac{1}{n}
+\sum_{i}{\varepsilon(s_{i}\mid f)}\Big]}
+</p>
+$$
+ Here $Q\left(\{s_{i}\}\right)$ is the (usually unknown) probability of obtaining the input-output pairs of data, 
+ $s_{i} \equiv \{x_{i},y_i\}$.
+Using the Fourier representation of the delta function, $\delta(x) \equiv \int_{-\infty}^{\infty}{\frac{dk}{2\pi}\;
+e^{ikx}}$ along with a change of variables, $\zeta = \frac{k}{n}$, we can write: 
+%or simplicity, we assume that each such pair is generated independently, i.e. 
+%$Q\left(\{s_{i}\}\right) = \prod_{i}{q(s_i)}$.
+Then we can write:
+ %$$<p>
+%P\left[E= \mathrm{E}<em>{n}(f)\right] =  \sum</em>{{s_{i}}}{\left(\prod_{i=1}^{N}{q(s_{i})}\right)\delta\left[E - \frac{1}{n}\sum_{i}{e(s_{i}\mid f)}\right]}
+%$$</p>
+<p>$$</p>
+<p>P\big[E= \mathrm{E}<em>{n}(f)\big] = \int</em>{-\infty}^{\infty}{\frac{nd\zeta}{2\pi};
+e^{in\zeta E}\left[\sum_{{s_{i}}}{Q(\left{s_{i}\right})\exp\left{-i\zeta\sum_{i=1}^{n}{\varepsilon(s_{i}\mid f)}\right}}\right]}
+</p>
+$$
+Consider now:
+$$<p>\Lambda(i\zeta,f) = -\lim_{n\rightarrow\infty}\frac{1}{n}\log\left[\sum_{{s}}{Q({s_i})\exp\left{-i\zeta\sum_{i=1}^{n}{\varepsilon(s_{i}\mid f)}\right}}\right]
+</p>
+$$
+If $\Lambda(i\zeta, f)$ exists, we have that:
+$$<p>P\big[E= \mathrm{E}<em>{n}(f)\big] = \int</em>{-\infty}^{\infty}{\frac{nd\zeta}{2\pi};
+e^{n\left[i\zeta E - \Lambda(i\zeta,f)\right]}}
+</p>
+$$
+For samples that are chosen independently, we can use the additivity of the average loss over samples to regroup terms and show that the limit in Eq.(char) exists and the exponent becomes:
+$$<p>\lambda(i\zeta,f) \equiv -\log\Bigg[\sum_{s_{i}}{q(s_{i})\exp\bigg{-i\zeta\varepsilon(s_{i}\mid f)\bigg}}\Bigg]
+</p>
+$$
+Upon setting $\zeta \equiv \frac{k}{N}$, $z \equiv i\zeta$, and using Eq.(char), Eq.(fourier1) becomes:
+$$<p>P\big[E= \mathrm{E}<em>{n}(f)\big] = \frac{N}{2\pi i}\int</em>{z = -i\infty}^{i\infty}{dz \ \exp\Bigg[N\Big(z E - \lambda(z ; f)\Big)\Bigg]}
+</p>
+$$
+Define $\Psi(z ; f) \equiv \Big(z E - \Lambda(z ; f)\Big)$.
+Let $z_0$ be the saddle point of $\Psi(z ; f)$.
+We expand $\Psi$ 
+around its saddle point as:
+$$<p>\Psi(z ; f) \approx \Psi(z_{0} ; f) + \frac{1}{2}\Psi&rsquo;&rsquo;(z_{0})(z - z_{0})^2
+</p>
+$$
+Here $\Psi''(z_{0})$ is the second derivative:
+$$<p>
+\Psi&rsquo;&rsquo;(z_{0}) \equiv \frac{d^2}{dz^{2}}\Psi(z ; f)\Bigg\vert_{z = z_0}
+</p>
+$$
+We ignore higher order contributions around the saddle point by making the assumption that they are oscillatory
+and do not contribute significantly to the integral in Eq.(steepd1).
+Furthermore we choose a contour, 
+$\mathcal{C} : z - z_{0} = r e^{i\phi}$ such that: 
+$$<p>
+\Psi&rsquo;&rsquo;(z_{0};f)e^{2i\phi} = -\lvert\Psi&rsquo;&rsquo;(z_{0};f)\rvert
+</p>
+$$
+On integrating over this contour, $\mathcal{C}$, Eq.(A1) takes the form:
+$$<p>
+P\left[E= \mathrm{E}<em>{n}(f)\right] = \frac{N}{2\pi i}e^{i\phi + N\Psi(z</em>{0};f)}
+\int_{0}^{\infty}{dr;
+e^{-\frac{N}{2}r^{2}\lvert \Psi&rsquo;&rsquo;(z_{0};f)\rvert}}
+</p>
+$$
+Thus, the probability distribution becomes:
+$$<p>
+P(E) \approx \sqrt{\frac{N}{2\pi\lvert\Psi&rsquo;&rsquo;(z_{0};f)\rvert}}e^{i(\phi -\frac{\pi}{2})}\exp\left(N\Psi(z_0 ; f)\right)
+</p>
+$$
+The saddle point condition, $\Psi'(z_{0}) = 0$ is equivalent to the equation:
+$$<p>
+E = \frac{d}{dz}\Lambda(z ; f)\Bigg\vert_{z = z_{0}}
+</p>
+$$
+$E$ is a real number, and thus, $\lambda$ and its derivatives are real at $z = z_{0}$.
+Then, the contour $\mathcal{C}$ is such
+that $\phi = \frac{\pi}{2}$, and setting $z_{0} = \beta$ we get:
+$$<p>P(E) \approx \sqrt{\frac{N}{2\pi\lvert\Psi&rsquo;&rsquo;(\beta;f)\rvert}}\exp\left(N\left[\beta E - \Lambda(\beta ; f)\right]\right)
+</p>
+$$
+$\beta$ plays the role of an inverse temperature.
+Eq.(probA) is the desired probability distribution, with 
+$\Lambda(\beta;f)$ becoming the free energy corresponding to a partition function, $\mathcal{Z}_{n}(f)$ estimated 
+over a probability distribution, $Q_{n}(S)$ over $n$ samples $S$ and average error, $\mathrm{E}_{n}(S\mid f)$: 
+$$<p>\Lambda(\beta ; f) = -\lim_{n\rightarrow\infty}\frac{1}{n}\log\left[\sum_{S}{Q_{n}(S)e^{-n\beta E_{n}(S\mid f)}}\right]
+= -\lim_{n\rightarrow\infty}\frac{1}{n}\log\mathcal{Z}_{n}(f)
+$$</p>
+<p>We have derived the asymptotic distribution assuming the existence of a single saddle point.
+However, the steepest descent
+method can also be applied when there are multiple non-degenerate saddle points and Eq.(A2) generalizes to a sum over
+these saddle points.
+However, the dominant one among them ``wins&quot; in the asymptotic limit, $N\rightarrow\infty$ since the
+separation between the dominant point and others grows exponentially.</p>
+<h2 id="appendix-b">Appendix B<a hidden class="anchor" aria-hidden="true" href="#appendix-b">#</a></h2>
+<p>% Note: in this sample, the section number is hard-coded in. Following
+% proper LaTeX conventions, it should properly be coded as a reference:</p>
+<p>%In this appendix we prove the following theorem from
+%Section~sec:textree-generalization:
+In this appendix we derive the form of the propagator in Eq.(fp2). We provide
+an informal derivation based on the Ito integral. To recapitulate, the propagator is defined as:
+$$</p>
+<p>K(\ta,\ta&rsquo;\mid \eta_t) \equiv \sum_{\Delta_{t}{\bf f}}{\delta(\ta - \ta&rsquo; - \Delta_{t}{\bf f})P(\Delta_{t}{\bf f})}
+</p>
+$$
+The quantity $\Delta_{t}{\bf f}$ is the ``integral" of the 
+random function $f$ over the time interval $\eta_{t}$. 
+We can write $\Delta_{t}{\bf f} = \eta_{t}{\bf f}(\ta) + \Delta_{t}\mathbf{\xi}$, where the second part is a random
+variable centered around $0$.
+Thus, we divide the interval of length $\eta_{t}$ into $T$ slices with the understanding
+that we consider the limit $T\rightarrow\infty$.
+Then, the quantity $\Delta_{t}\mathbf{\xi}$ is:
+$$<p>\Delta_{t}{\bf f} \approx \sum_{\alpha = 1}^{T}{\mathbf{\xi}_{\alpha}}
+</p>
+$$
+The random variables $\mathbf{\xi}_\alpha$ are all individually Gaussian random variables with p.d.f's given
+by Eq.(trs1), with individual variances given by the tensor $\mathbf{C}(\ta)$.
+A property of Gaussian 
+random variables is that the sum of $T$ Gaussian random variables is also Gaussian , but with a variance
+matrix that is the sum of individual variances, i.e $T\mathbf{C}(\ta)$.
+Hence, more generally, the variance
+matrix of the random variable $\Delta_{t}\mathbf{\xi}$ is thus
+$$<p>\mathbf{C}<em>{\Delta}(\ta;\eta</em>{t}) = \int_{0}^{\eta_{t}}{\mathbf{C}(\ta)\ d\tau} = \eta_{t}\mathbf{C}(\ta)
+</p>
+$$
+Consequently, the propagator becomes:
+$$<p>K(\ta,\ta&rsquo;\mid\eta_{t}) =
+\int{d\mathbf{\Delta};
+\delta\left(\ta - \ta&rsquo; - \eta_{t}{\bf f}(\ta) - \mathbf{\Delta}\right)\exp\left(
+-\frac{m}{2\eta_{t}}\mathbf{\Delta}\cdot\mathbf{C}^{-1}\mathbf{\Delta}\right)}
+</p>
+$$
+This results in the Fourier form of the propagator as:
+$$<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) =
+\frac{B_m}{\eta_{t}}\int{d{\bf p}\exp\left[i{\bf p}\cdot\left(\frac{\vec{\theta}<em>{t+1} - \vec{\theta}</em>{t} }{\eta_{t}} - {\bf f}(\vec{\theta}_t)\right)</p>
+<ul>
+<li>\frac{1}{2m\eta_{t}}{\bf p}\cdot\mathbf{C}(\vec{\theta}_{t})\cdot{\bf p}\right]}
+
+$$
+Thus, if we write $\dot{\ta}_{t} \approx \frac{1}{\eta_t}(\ta_{t+1} - \ta_{t})$, the propagator can be written as:
+$$</li>
+</ul>
+<p>K(\ta_{t+1}\mid\ta_{t}, \eta_{t}) \approx \exp\left[-\eta_{t}\mathrm{L}(\dot{\ta}<em>{t},\ta</em>{t})\right]
+</p>
+$$
+Here, the Lagrangian, $\mathrm{L}$, in Eq.(B6) is the same as in Eq.(fp2), i.e 
+$$<p>
+\mathrm{L}(\dot{\ta},\ta) = \frac{m}{2}\left(\dot{\ta} - {\bf f}(\ta)\right)\cdot\mathbf{C}^{-1}(\ta)\cdot
+\left(\dot{\ta} - {\bf f}(\ta)\right)
+$$</p>
+<h2 id="appendix-c">Appendix C<a hidden class="anchor" aria-hidden="true" href="#appendix-c">#</a></h2>
+<p>Here, we derive the Fokker-Planck equation in the continuum time limit, $\eta_{t}\rightarrow 0$.
+The form, Eq.(fp2) and Eq.(B6) of the short-time propagator can be rewritten using a change of
+variables, ${\bf k} = {\bf p}/\eta_{t}$ to be:
+$$</p>
+<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) =
+B_{m}\int{d{\bf k};
+e^{i{\bf k}\cdot(\ta_{t+1} - \ta_{t})}\exp\left(-\eta_{t}\left[i{\bf k}\cdot{\bf f}(\ta) + \frac{1}{2m}{\bf k}\cdot\mathbf{C}\cdot{\bf k}\right]\right)}
+</p>
+$$
+For short times, $\eta_{t} \rightarrow 0$, the exponential can be expanded using $e^{-\eta_{t}\phi} \approx (1 - \eta_{t}\phi)$ as
+$$<p>K(\vec{\theta}<em>{t+1}\mid\vec{\theta}</em>{t};\eta_{t}) =
+B_{m}\int{d{\bf k};
+e^{i{\bf k}\cdot(\ta_{t+1} - \ta_{t})}\left(1-\eta_{t}\left[i{\bf k}\cdot{\bf f}(\ta) + \frac{1}{2m}{\bf k}\cdot\mathbf{C}\cdot{\bf k}\right]\right)}
+</p>
+$$
+Since the first term on the r.h.s of Eq.(C2) is equal to $\delta(\ta' - \ta)$, as $\eta_{t} \rightarrow 0$, we can multiply
+both sides by $\sigma(\ta,t)$, integrate over $\ta$ and convert Eq.(C2) to:
+$$<p>\frac{1}{\eta_{t}}(\sigma(\ta,t+1) - \sigma(\ta,t)) =  -\int{d{\bf k}d\ta\left(i{\bf k} e^{i{\bf k}\cdot(\ta_{t+1} - \ta_{t})}{\bf f}(\ta_{t}) + \frac{1}{2m}{\bf k}e^{i{\bf k}\cdot\ta_{t+1}}\cdot\mathbf{C}\cdot{\bf k}e^{-i{\bf k}\cdot\ta_{t}}\right)\sigma(\ta,t)}
+</p>
+$$
+We now use the following properties:
+$$<p>
+\begin{aligned}</p>
+<p>\int{d{\bf k}i{\bf k}e^{i{\bf k}\cdot(\ta_{t+1} - \ta_{t})}} = \mathbf{\nabla}<em>{\ta}\delta(\ta</em>{t+1} - \ta_{t})\
+\int{{\bf k}e^{i{\bf k}\cdot\ta_{t+1}}\cdot{C}(\ta_{t})\cdot{\bf k}e^{-i{\bf k}\cdot\ta_{t}}d{\bf k}} = \mathbf{\nabla}<em>{\ta</em>{t+1}}\cdot\mathbf{C}(\ta_{t})\cdot\mathbf{\nabla}<em>{\ta</em>{t}}\delta(\ta_{t+1} - \ta_{t})\
+\int{\nabla_{\ta_t}\delta(\ta_{t+1} - \ta_{t})\cdot{\bf f}(\ta_{t})\sigma(\ta_{t},t)d\ta_{t}} =
+-\nabla\cdot\left({\bf f}(\ta_{t+1})\sigma(\ta_{t+1},t)\right)<br>
+\end{aligned}
+</p>
+$$
+From Eq.
+(C3) and (C4), we obtain the Fokker Planck equation upon integrating over $\ta_{t}$:
+$$<p>
+\frac{\partial\sigma}{\partial t} = -\nabla_{\ta}\cdot\left({\bf f}(\ta)\sigma(\ta,t)\right) + \frac{1}{2m}\nabla_{\ta}\cdot\mathbf{C}(\ta)\cdot\nabla_{\ta}\sigma(\ta,t)
+$$</p>
+<h2 id="appendix-d">Appendix D<a hidden class="anchor" aria-hidden="true" href="#appendix-d">#</a></h2>
+<p>I show here that momentum based SGD methods describe a probability distribution that also satisfies a similar
+Fokker-Planck time evolution.
+Momentum SGD corresponds to the following time evolution ([Ref: Rumelhart:1986]):
+$$</p>
+<p>\Delta\ta_{t} = -\eta\nabla_{\ta}E\left(\mathcal{S}<em>{m}\mid\ta_t\right) + p\Delta\ta</em>{t-1}
+</p>
+$$
+Here, $\Delta\ta_{t} \equiv \ta_{t+1} -\ta_{t}$, and $\epsilon , p$ are the learning and momentum parameters.
+By 
+introducing a momentum variable, ${\bf p}_t$, [Ref: Qian:1997] showed that momentum based SGD can be 
+described by the following dynamics:
+$$<p>
+\begin{aligned}</p>
+<p>\mathbf{p}<em>{t} \equiv \frac{M}{\Delta t}(\ta</em>{t+1} - \ta_{t}) \</p>
+<p>\frac{\Delta\mathbf{p}<em>{t}}{\Delta t}  + \mu\mathbf{p}</em>{t} = -\nabla_{\ta}E\left(\mathcal{S}_{m}\mid\ta_t\right)
+\end{aligned}
+</p>
+$$
+The parameters, $\{M,\mu,\Delta t\}$ are related to the learning rate and momentum parameter as ([Ref: Qian:1997]):
+$$<p>\eta = \frac{(\Delta t)^2}{M + \mu\Delta t} ;;
+\text{and};;  p = \frac{M}{M + \mu\Delta t}
+</p>
+$$
+Eqs.(sgdM1) and (sgdM2) are discretized versions of Newton's equations in the presence of friction 
+(the term with $\mu$).
+In the limit, $\Delta t \rightarrow 0$, we can
+and defining, $\mathbf{Q} \equiv {{\ta}\choose{\mathbf{p}}}$, 
+they can be written in the general form:
+$$<p>\frac{d\mathbf{Q}}{dt} = \mathbf{F}(\mathbf{Q}) + \vec{\xi}(\mathbf{Q};t)
+</p>
+$$
+The generalized force, $\mathbf{F}(\mathbf{Q}$ has the form:
+$$<p>
+\mathbf{F}(\mathbf{Q}) \equiv
+{{\frac{1}{M}\mathbf{p}}\choose{-\nabla_{\ta}\mathcal{G}(\ta) - \mu\mathbf{p}}} ;\text{and};
+\vec{\xi}(\mathbf{Q};t) \equiv {{0}\choose{-\nabla_{\ta}[E\left(\mathcal{S}_{m}\mid\ta_t\right)-\mathcal{G}(\ta)]}}
+</p>
+$$
+Eq.(sgdgen) is a first order stochastic differential equation in the space of generalized coordinates, 
+$\mathbf{Q}$, with a noise term, $\vec{\xi}(\mathbf{Q};t)$ that by the arguments of Secs.(4.1) and (4.2), 
+is Gaussian with a covariance matrix given by $\mathbf{B}(\mathbf{Q})$ defined as:
+$$<p>
+\mathbf{B}(\mathbf{Q}) \equiv \begin{pmatrix} 0 &amp; 0 \ 0 &amp; \mathbf{C}(\ta) \end{pmatrix}
+</p>
+$$
+Thus, by the same considerations as in the previous sections, the dynamics of the 
+probability density function,
+$\sigma(\mathbf{Q},t)$ over generalized coordinates, $\mathbf{Q}$ is given by a Fokker-Planck equation:
+$$<p>\frac{\partial}{\partial t}\sigma(\mathbf{Q},t) = -\nabla_{\bf Q}\cdot\left(\mathbf{F}(\mathbf{Q})\sigma\right) +
+\frac{1}{2m}\nabla_{\bf Q}\cdot\mathbf{B}(\mathbf{Q})\cdot\nabla_{\bf Q}\sigma
+</p>
+$$
+As before, the quantity $m$ in Eq.(gfp) is the minibatch size.
+%Thus, the equilibrium condition for 
+%Eq.(gfp) is:
+%$$<p>
+%
+%\mathbf{F}(\mathbf{Q}) = \frac{1}{2m}\mathbf{B}(\mathbf{Q})\cdot\nabla_{\bf Q}\log\sigma
+%</p>
+$$
+Writing Eq.(gfp) in terms of $\ta$ and ${\bf p}$ gives:
+$$<p>\partial_{t}\sigma = - \frac{1}{M}\mathbf{p}\cdot\nabla_{\ta}\sigma - \nabla_{\bf p}\left(\mathbf{f}(\ta) - \mu
+\mathbf{p}\right)\sigma + \frac{1}{2m}\nabla_{\bf p}\cdot\mathbf{C}(\ta)\cdot\nabla_{p}\sigma
+</p>
+$$
+Define a Hamiltonian, and its Poisson bracket as
+$$<p>
+\begin{aligned}
+H(\mathbf{Q}) \equiv \frac{\mathbf{p}\cdot\mathbf{p}}{2M} + \mathcal{G}(\ta).
+\
+\left{H(\ta,\mathbf{p}),g(\ta,\mathbf{p})\right} \equiv
+\frac{\partial H}{\partial\ta}\cdot\frac{\partial g}{\partial\mathbf{p}} - \frac{\partial g}{\partial\ta}\cdot\frac{\partial H}{\partial\mathbf{p}}
+\end{aligned}
+</p>
+$$
+Eq.(gfp1) can be rewritten in terms of the Hamiltonian as
+$$<p>\partial_{t}\sigma = -\left{H(\ta,\mathbf{p}),\sigma\right} +
+\mu\nabla_{\bf p}\cdot(\mathbf{p}\sigma) + \frac{1}{2m}\nabla_{\bf p}\cdot\mathbf{C}(\ta)\cdot\nabla_{p}\sigma
+</p>
+$$
+For $\sigma_{ss}(\mathbf{Q}) \propto \exp\left(-\beta H\right)$ to be a stationary distribution
+of Eq.(liou), the friction and noise contributions have to balance each other out, i.e.
+$$<p>\nabla_{\bf p}\cdot\left[\mu\mathbf{p}\sigma_{ss} + \frac{1}{2m}\mathbf{C}(\ta)\cdot\nabla_{\bf p}\sigma_{ss}\right] = 0
+</p>
+$$
+This condition amounts to requiring that
+$$<p>\mu\mathbf{p} - \frac{\mathbf{\beta p}}{2mM}\cdot\mathbf{C}(\ta) = 0.
+$$
+Eq.(liou2) cannot be satisfied unless the covariance matrix, $\mathbf{C}(\ta)$ is constant, as in the case for regular SGD.
+Thus, for general momentum based SGD methods, as with regular SGD, the algorithm does not
+converge to the stationary Boltzmann-Gibbs distribution.</p>
+<p>\bibliography{sgd.fn}</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/biophysics-notes/">
+    <span class="title">« Prev</span>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">Computational Biology &amp; AI Research</a></span> · 
+
+    
+    
+    <span>
+        Powered by
+        <a href="https://gohugo.io/?utm_source=papermod" rel="noopener" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" id="top-link" class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up">
+        <polyline points="17 11 12 6 7 11"></polyline>
+        <polyline points="17 18 12 13 7 18"></polyline>
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var toplink = document.getElementById("top-link");
+    window.onscroll = function () {
+        const scrollThreshold = window.innerHeight;
+        if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+            toplink.classList.remove("hidden");
+        } else {
+            toplink.classList.add("hidden");
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

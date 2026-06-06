@@ -1,0 +1,106 @@
+<div class="sim-container" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+    <div id="plot" style="width:100%; height:400px;"></div>
+    
+    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+        <button id="btn-run" style="padding: 5px 15px; cursor: pointer;">Run Simulation</button>
+        <button id="btn-reset" style="padding: 5px 15px; cursor: pointer;">Reset</button>
+        
+        <div style="margin-left: auto; display: flex; gap: 15px;">
+            <label>Learning Rate: <input type="range" id="lr" min="0.01" max="0.3" step="0.01" value="0.05"></label>
+            <label>Noise (Temp): <input type="range" id="noise" min="0" max="2" step="0.1" value="0.8"></label>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Define the Energy Landscape Math (e.g., E(x) = 0.05*x^2 - cos(x))
+    function E(x) { return 0.05 * x * x - Math.cos(x); }
+    function dE(x) { return 0.1 * x + Math.sin(x); } // Derivative
+
+    // 2. Generate the static landscape line
+    const xVals = [];
+    const yVals = [];
+    for (let x = -10; x <= 10; x += 0.1) {
+        xVals.push(x);
+        yVals.push(E(x));
+    }
+
+    // 3. Initial States
+    const startX = -8;
+    let gd_x = startX;
+    let bm_x = startX;
+    let animationId;
+    let isRunning = false;
+
+    // 4. Plotly Setup
+    const layout = {
+        title: 'Gradient Descent vs Biased Brownian Motion',
+        xaxis: { range: [-10, 10], title: 'Position (x)' },
+        yaxis: { range: [-2, 6], title: 'Energy E(x)', fixedrange: true }, // Fixed Y-axis!
+        margin: { l: 40, r: 20, t: 40, b: 40 }
+    };
+
+    const landscapeTrace = { x: xVals, y: yVals, mode: 'lines', name: 'Energy Landscape', line: { color: 'gray' } };
+    const gdTrace = { x: [gd_x], y: [E(gd_x)], mode: 'markers', name: 'Gradient Descent', marker: { size: 12, color: 'blue' } };
+    const bmTrace = { x: [bm_x], y: [E(bm_x)], mode: 'markers', name: 'Brownian Motion', marker: { size: 12, color: 'orange' } };
+
+    Plotly.newPlot('plot', [landscapeTrace, gdTrace, bmTrace], layout, {responsive: true});
+
+    // 5. Simulation Loop
+    function step() {
+        if (!isRunning) return;
+
+        const lr = parseFloat(document.getElementById('lr').value);
+        const noise = parseFloat(document.getElementById('noise').value);
+
+        // Gradient Descent update: Move purely based on gradient
+        gd_x = gd_x - lr * dE(gd_x);
+
+        // Brownian Motion update: Move based on gradient + random noise
+        const randomStep = (Math.random() - 0.5) * 2; // Value between -1 and 1
+        bm_x = bm_x - lr * dE(bm_x) + (noise * randomStep);
+
+        // Keep particles within bounds
+        gd_x = Math.max(-10, Math.min(10, gd_x));
+        bm_x = Math.max(-10, Math.min(10, bm_x));
+
+        // Update plot efficiently
+        Plotly.animate('plot', {
+            data: [
+                { x: [gd_x], y: [E(gd_x)] }, // Update trace 1 (GD)
+                { x: [bm_x], y: [E(bm_x)] }  // Update trace 2 (BM)
+            ],
+            traces: [1, 2]
+        }, {
+            transition: { duration: 0 },
+            frame: { duration: 50, redraw: false }
+        });
+
+        animationId = requestAnimationFrame(step);
+    }
+
+    // 6. Button Listeners
+    document.getElementById('btn-run').addEventListener('click', function() {
+        if (isRunning) {
+            isRunning = false;
+            this.innerText = "Run Simulation";
+            cancelAnimationFrame(animationId);
+        } else {
+            isRunning = true;
+            this.innerText = "Stop";
+            step();
+        }
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', function() {
+        isRunning = false;
+        document.getElementById('btn-run').innerText = "Run Simulation";
+        cancelAnimationFrame(animationId);
+        gd_x = startX;
+        bm_x = startX;
+        Plotly.animate('plot', { data: [{ x: [gd_x], y: [E(gd_x)] }, { x: [bm_x], y: [E(bm_x)] }], traces: [1, 2] }, { transition: { duration: 0 }, frame: { duration: 0 } });
+    });
+});
+</script>

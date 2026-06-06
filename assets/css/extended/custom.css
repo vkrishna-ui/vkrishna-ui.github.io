@@ -1,0 +1,28 @@
+/* 1. Change the base font size for the entire site (Default is usually 16px/18px depending on screen size) */
+body {
+    font-size: 12px; /* reduces the default text size */
+}
+
+/* 2. Target the main content area specifically (your math and paragraph text) */
+.post-content {
+    font-size: 1.0rem; /* Scales text relative to the body size */
+    line-height: 1.7;   /* Adds a bit more breathing room between lines */
+}
+
+/* 3. Adjust Heading Sizes */
+.post-content h1 {
+    font-size: 2rem;
+}
+
+.post-content h2 {
+    font-size: 1.5rem;
+}
+
+.post-content h3 {
+    font-size: 1.0rem;
+}
+
+/* 4. Optional: Adjust the size of inline code blocks or KaTeX math if needed */
+.post-content code {
+    font-size: 0.7em;
+}

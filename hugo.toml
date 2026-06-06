@@ -1,0 +1,64 @@
+baseURL = 'https://vkrishna-ui.github.io/'
+languageCode = 'en-us'
+title = 'My Research Notes'
+theme = 'PaperMod'
+
+# Ensure Hugo builds your posts for the homepage routing
+mainSections = ['posts']
+
+[params]
+    author = 'V. Krishna'
+    description = 'Notes and research on AI/ML in clinical oncology, biophysics, and mathematical modeling.'
+    
+    # PaperMod specific UI settings
+    env = 'production'
+    defaultTheme = 'auto' # allows switching between light and dark mode
+    ShowReadingTime = true
+    ShowShareButtons = false
+    ShowPostNavLinks = true
+    ShowBreadCrumbs = true
+    ShowCodeCopyButtons = true
+    
+    # Custom variable to trigger math rendering scripts
+    math = true
+
+# Profile Mode creates a clean, centralized landing page
+[params.profileMode]
+    enabled = true
+    title = 'V. Krishna'
+    subtitle = 'Computational Biologist | AI/ML for Therapeutics'
+    imageUrl = '' # Add an avatar image to your static/ folder and link it here (e.g., 'avatar.jpg')
+    imageWidth = 120
+    imageHeight = 120
+
+    [[params.profileMode.buttons]]
+        name = 'Research Notes'
+        url = '/posts/'
+#    [[params.profileMode.buttons]]
+      #  name = 'GitHub'
+      #  url = 'https://github.com/vkrishna-ui'
+
+# Top navigation menu
+[menu]
+    [[menu.main]]
+        identifier = "posts"
+        name = "Posts"
+        url = "/posts/"
+        weight = 10
+  #  [[menu.main]]
+   #     identifier = "tags"
+    #    name = "Tags"
+     #   url = "/tags/"
+      #  weight = 20
+
+# Tell Hugo's Markdown engine to ignore math delimiters and pass them raw to KaTeX
+[markup]
+  [markup.goldmark.extensions]
+    # Define passthrough as a table, then enable it
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block = [['$$', '$$'], ['\[', '\]']]
+        inline = [['$', '$'], ['\(', '\)']]
+       [markup.goldmark.renderer]
+         unsafe = true
