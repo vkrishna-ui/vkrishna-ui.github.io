@@ -8,7 +8,7 @@ mainSections = ['posts']
 
 [params]
     author = 'V. Krishna'
-    description = 'Notes and research on AI/ML in clinical oncology, biophysics, and mathematical modeling.'
+    description = 'Notes and writings on AI/ML and related topics of interest.'
     
     # PaperMod specific UI settings
     env = 'production'
@@ -25,8 +25,8 @@ mainSections = ['posts']
 # Profile Mode creates a clean, centralized landing page
 [params.profileMode]
     enabled = true
-    title = 'V. Krishna'
-    subtitle = 'Computational Biologist | AI/ML for Therapeutics'
+    title = 'Vinod Krishna'
+    subtitle = 'Computational Biologist | AI/ML and other writings'
     imageUrl = '' # Add an avatar image to your static/ folder and link it here (e.g., 'avatar.jpg')
     imageWidth = 120
     imageHeight = 120
