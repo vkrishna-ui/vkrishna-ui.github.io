@@ -58,7 +58,7 @@ $$
 $$
 In a curved space with a metric $C(\theta)$, Amari defined a "natural" gradient to be:
 $$
-\nabla_{C}\sigma(\vec{\theta}) \equiv = C^{-1}\cdot\nabla_{\vec{\theta}}\sigma(\vec{\theta})
+\nabla_{C}\sigma(\vec{\theta}) \equiv C^{-1}\cdot\nabla_{\vec{\theta}}\sigma(\vec{\theta})
 $$
 This definition identifies the true gradient, or direction of steepest descent in a curved space. 
 Thus, for our example a true Fokker-Planck equation in inner product space will be of the form:
