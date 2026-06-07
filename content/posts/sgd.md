@@ -124,6 +124,30 @@ sampling and exploration. This insight is also at the heart of modern generative
 models. As a matter of fact, generative diffusion models also rely on generating dynamics 
 according to a Fokker-Planck equation similar in structure to what is derived here. 
 
+##### A concluding note
+A natural question to ask is- why is it useful to understand the evolution of a probability
+distribution over parameters? After all, in the simplest terms, one is only interested in an
+optimal (or "good enough") set of parameter values that make a machine learning model a good
+predictor, rather than probability distributions over parameters. Classical gradient descent
+in fact does provide such an optimal value of parameters at the end of training. However,
+the introduction of randomness through minibatch selection "widens" this choice, and instead
+results in a distribution of parameters, with the optimal set being a mode of this probability
+density function. Notably, as the minibatch size, $\vert B\vert$ increases, the associated
+probability density function becomes increasingly concentrated around its (highest) modal value,
+and the parameter values begin to "anneal" towards this value. In reality, given the sparsity
+of true minima in a high dimensional loss landscape, due to the finite time taken for training, 
+gradient descent would likely result in parameter values associated with a critical point, that 
+may not be a true minimum, while by adding noise to the dynamics, SGD possibly enables a better
+sampling of the loss landscape, resulting in a greater likelihood of a parameter set that enables
+better generalization. This is, of course, a lot of handwaving, that is further complicated by
+the fact that SGD results in limit cycles, rather than a true stationary distribution. However,
+as I discuss in a subsequent writeup, replacing simple gradients by a "natural" gradient does
+result in the dynamics converging to a Boltzmann distribution over the loss function in parameter
+space, with an effective temperature that is inversely proportional to the minibatch size, 
+$\vert B\vert$. Thus, here taking the limit of infinite minibatch size is equivalent to a 
+simulated annealing process where the temperature is taken to zero, and results in the optimal
+parameter set being a true minimum of the loss landscape. 
+
 ##### Some Further Reading (This is by no means exhaustive)
 That SGD induces a Fokker-Planck equation has been derived, and the properties of this 
 dynamics are a fairly active area of research. I reference a couple of papers that could
