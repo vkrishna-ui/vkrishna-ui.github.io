@@ -16,6 +16,23 @@ probability distribution governed by a Fokker-Planck equation, with a diffusion 
 proportional to a covariance matrix of gradients; and its score function given by the 
 gradient of the loss function employed in training the machine learning model. 
 
+#### What is described here? 
+In simple terms,this note examines a common method used to train the parameters of a 
+machine learning model by minimizing the error between the predictions of the model and the 
+observed ground truth. Intuitively, to find the "best" parameters that minimize an error, 
+we vary the parameters and update them in the direction in which the error reduces the 
+most; this is known as gradient descent. However, this requires looking at every single 
+piece of training data before taking each step. For the massive datasets used to train 
+modern AI models, this is very slow and computationally expensive. 
+
+To speed this up, a Stochastic Gradient Descent (SGD) method is used. Instead of looking at 
+all the data at once, a random subset (a "minibatch") is chosen to guess which way is downhill.
+Doing this also introduces noise into the error estimation. This note shows that this noise 
+converts the gradient descent trajectory into a random, diffusive walk. Furthermore the
+analysis shows that the presence of randomness improves exploration of parameter space by 
+preventing the model from being trapped into a suboptimal portion of the parameter space, thus
+improving the estimation of the model's parameters to make for a better performing model. 
+
 #### A basic description of SGD
 A basic recipe in training a ML model is to estimate and minimize a mean loss function that 
 measures the difference between model predictions and the true positives over a training set. 
