@@ -4,6 +4,7 @@ date: 2026-05-26T23:35:53-04:00
 draft: false
 math: true
 weight: 1
+tags: ["machine learning", "sgd", "optimization"]
 ---
 ### SGD as an early diffusion model
 Generative diffusion models aim to reconstruct an underlying probability distribution from a given 
