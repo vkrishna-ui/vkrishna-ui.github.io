@@ -60,7 +60,7 @@ which is a nice way of thinking about curved geometries, although I am not sure 
 is, and whether it holds for arbitrary metrics.
 In this curved space, we can rewrite the Fokker-Planck equation also as an inner product:
 $$
-\partial_{t}\rho = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\rho{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
+\partial_{t}\rho = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\sigma{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
 $$
 In a curved space with a metric $C(\theta)$, Amari defined a "natural" gradient to be:
 $$
@@ -68,24 +68,27 @@ $$
 $$
 This definition identifies the true gradient, or direction of steepest descent in a curved space. 
 Thus, for our example a true Fokker-Planck equation in inner product space will be of the form:
+
 $$
-\partial_{t}\rho = \left\langle\nabla^{*}_{C},\Bigg[-C^{-1}f\rho + \frac{1}{2\vert B\vert}\nabla_{C}\rho\Bigg]\right\rangle_{c}
+\partial_{t}\sigma = \left\langle\nabla^{*}_{C},\Bigg[-C^{-1}f\sigma + \frac{1}{2\vert B\vert}\nabla_{C}\sigma\Bigg]\right\rangle_{c}
 $$
-Here, $\nabla^{*}_{C}$ is the adjoint operator for the natural gradient. 
-This is equivalent to:
+
+Here, $ \nabla^{*}_{C} $ is the adjoint operator for the natural gradient. This is equivalent to:
 $$
-\partial_{t}\rho  = -\nabla^{*}_{C}\cdot{\bf J}\rho
+\partial_{t}\sigma  = -\nabla^{*}_{C}\cdot{\bf J}\sigma
 $$ 
 With a current given by: 
+
 $$
-{\bf J} = {\bf f}(\vec{\theta}) - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
+{\bf J} = {\bf f}(\vec{\theta}) - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\sigma
 $$
 
 This expression for the current is independent of the covariance, and thus this dynamics
 converges to a steady state Boltzmann distribution, when the current ${\bf J} = 0 $ ! 
 The resulting steady state Boltzmann distribution is:
+
 $$
-\rho_{ss}(\vec{\theta) = \frac{1}{Z}e^{-2\vert B\vert E(\vec{\theta})}
+\rho_{ss}(\vec{\theta}) = \frac{1}{Z}e^{-2\vert B\vert E(\vec{\theta})}
 $$
 
 The corresponding stochastic natural gradient dynamics, with minibatch $B$ has the form:
