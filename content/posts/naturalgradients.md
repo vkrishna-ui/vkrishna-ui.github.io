@@ -60,7 +60,7 @@ which is a nice way of thinking about curved geometries, although I am not sure 
 is, and whether it holds for arbitrary metrics.
 In this curved space, we can rewrite the Fokker-Planck equation also as an inner product:
 $$
-\partial_{t}\rho = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\sigma{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
+\partial_{t}\sigma = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\sigma{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
 $$
 In a curved space with a metric $C(\theta)$, Amari defined a "natural" gradient to be:
 $$
