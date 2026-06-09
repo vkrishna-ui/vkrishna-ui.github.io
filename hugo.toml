@@ -32,7 +32,7 @@ mainSections = ['posts']
     imageHeight = 120
 
     [[params.profileMode.buttons]]
-        name = ''
+        name = 'Research Notes'
         url = '/posts/'
 #    [[params.profileMode.buttons]]
       #  name = 'GitHub'
