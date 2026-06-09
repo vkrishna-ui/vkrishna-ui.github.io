@@ -1,6 +1,6 @@
 /* 1. Change the base font size for the entire site (Default is usually 16px/18px depending on screen size) */
 body {
-    font-size: 12px; /* reduces the default text size */
+    font-size: 11px; /* reduces the default text size */
 }
 
 /* 2. Target the main content area specifically (your math and paragraph text) */
@@ -11,7 +11,7 @@ body {
 
 /* 3. Adjust Heading Sizes */
 .post-content h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 
 .post-content h2 {
