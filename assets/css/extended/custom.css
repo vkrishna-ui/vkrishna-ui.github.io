@@ -1,6 +1,6 @@
 /* 1. Change the base font size for the entire site (Default is usually 16px/18px depending on screen size) */
 body {
-    font-size: 11px; /* reduces the default text size */
+    font-size: 12px; /* reduces the default text size */
 }
 
 /* 2. Target the main content area specifically (your math and paragraph text) */
@@ -25,4 +25,12 @@ body {
 /* 4. Optional: Adjust the size of inline code blocks or KaTeX math if needed */
 .post-content code {
     font-size: 0.7em;
+}
+/* 2. Reduces the main title at the top of an individual post */
+.post-title {
+    font-size: 32px; /* Default is usually 40px */
+}
+/* 1. Reduces the post title on the main/list pages */
+.post-entry .entry-header h2 {
+    font-size: 20px; /* Default is usually 24px */
 }
