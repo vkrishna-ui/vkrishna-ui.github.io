@@ -45,11 +45,16 @@ mainSections = ['posts']
         name = "Posts"
         url = "/posts/"
         weight = 10
-  #  [[menu.main]]
-   #     identifier = "tags"
-    #    name = "Tags"
-     #   url = "/tags/"
-      #  weight = 20
+    [[menu.main]]
+        identifier = "tags"
+        name = "Tags"
+        url = "/tags/"
+        weight = 20
+    [[menu.main]]
+       identifier = "about"
+       name = "About"
+       url = "/about/"
+       weight = 20
 
 # Tell Hugo's Markdown engine to ignore math delimiters and pass them raw to KaTeX
 [markup]
