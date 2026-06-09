@@ -5,6 +5,11 @@ draft: false
 math: true
 weight: 2
 ---
+### Summary
+Here I describe a modification to SGD, which results in the dynamics converging to a stationary distribution over
+parameter space. It turns out that this modified SGD method is equivalent to a Brownian dynamics in a curved space,
+with the distance (metric) of that curved space given by the covariance or Fisher information matrix of the loss 
+gradient. 
 ### Natural gradients in stochastic gradient descent
 The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note 
 is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is 
@@ -48,10 +53,7 @@ $$
 (I have used the subscript c, to distinguish our inner product norm from an Euclidean norm). This has a 
 neat geometric interpretation as saying that the average mean square change in error upon changing
 parameters of our ML model infinitesimally, is equal to the infinitesimal distance in our (curved)
-parameter space,endowed by a metric given by the covariance. This essentially says that a curved 
-metric space (at least for some metrics) is an average over randomly fluctuation flat geometries, 
-which is a nice way of thinking about curved geometries, although I am not sure how general this 
-is, and whether it holds for arbitrary metrics.
+parameter space,endowed by a metric given by the covariance. 
 In this curved space, we can rewrite the Fokker-Planck equation also as an inner product:
 $$
 \partial_{t}\rho = \left\langle\nabla_{\theta}, \Bigg[-C^{-1}\rho{\bf f} + \frac{1}{2\vert B\vert}\nabla_{\theta}\sigma \Bigg]\right\rangle_{c}
@@ -72,11 +74,15 @@ $$
 $$ 
 With a current given by: 
 $$
-{\bf J} = {\bf f}\rho - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
+{\bf J} = {\bf f} - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
 $$
 
 This expression for the current is independent of the covariance, and thus this dynamics
 converges to a steady state Boltzmann distribution, when the current ${\bf J} = 0 $ ! 
+This stationary distribution has the following form:
+$$
+\rho_{ss}(\vec{\theta}) = \frac{1}{Z}\exp\big[-2\vert B\vert E(\vec{\theta})\big]
+$$
 The corresponding stochastic natural gradient dynamics, with minibatch $B$ has the form:
 $$
 \vec{\theta}_{t + 1} = \vec{\theta}_{t} - \eta(t) C^{-1}(\vec{\theta})\cdot\nabla_{\theta}E(\vec{\theta}_{t},B)
