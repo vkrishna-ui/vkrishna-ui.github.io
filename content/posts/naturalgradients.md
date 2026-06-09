@@ -5,6 +5,12 @@ draft: false
 math: true
 weight: 2
 ---
+### Summary
+Here I describe a modification to SGD, which results in the dynamics converging to a stationary distribution over
+parameter space. It turns out that this modified SGD method is equivalent to a Brownian dynamics in a curved space,
+with the distance (metric) of that curved space given by the covariance or Fisher information matrix of the loss 
+gradient.
+
 ### Natural gradients in stochastic gradient descent
 The diffusion matrix, $C(\mathbf{\theta})$ that falls out of the probabilistic treatment of SGD in my previous note 
 is positive definite, as it is a covariance matrix. To recapitulate, $C(\mathbf{\theta})$ is 
@@ -72,11 +78,16 @@ $$
 $$ 
 With a current given by: 
 $$
-{\bf J} = {\bf f}\rho - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
+{\bf J} = {\bf f}(\vec{\theta}) - \frac{1}{2\vert B\vert}\nabla_{\vec{\theta}}\ln\rho
 $$
 
 This expression for the current is independent of the covariance, and thus this dynamics
 converges to a steady state Boltzmann distribution, when the current ${\bf J} = 0 $ ! 
+The resulting steady state Boltzmann distribution is:
+$$
+\rho_{ss}(\vec{\theta) = \frac{1}{Z}e^{-2\vert B\vert E(\vec{\theta})}
+$$
+
 The corresponding stochastic natural gradient dynamics, with minibatch $B$ has the form:
 $$
 \vec{\theta}_{t + 1} = \vec{\theta}_{t} - \eta(t) C^{-1}(\vec{\theta})\cdot\nabla_{\theta}E(\vec{\theta}_{t},B)
