@@ -4,6 +4,7 @@ date: 2026-06-02T23:35:53-04:00
 draft: false
 math: true
 weight: 2
+tags: ["machine learning", "sgd", "optimization", "information geometry"]
 ---
 ### Summary
 Here I describe a modification to SGD, which results in the dynamics converging to a stationary distribution over
