@@ -153,15 +153,17 @@ the introduction of randomness through minibatch selection "widens" this choice,
 results in a distribution of parameters, with the optimal set being a mode of this probability
 density function. 
 
+
 Notably, as the minibatch size, $\vert B\vert$ increases, the associated
 probability density function becomes increasingly concentrated around its (highest) modal value,
-and the parameter values begin to "anneal" towards this value. In reality, given the sparsity
+and the parameter values begin to "anneal" towards this value. In reality given the sparsity
 of true minima in a high dimensional loss landscape, due to the finite time taken for training, 
 gradient descent would likely result in parameter values associated with a critical point, that 
-may not be a true minimum, while by adding noise to the dynamics, SGD possibly enables a better
+may not be a true minimum, while by adding noise to the dynamics SGD possibly enables a better
 sampling of the loss landscape, resulting in a greater likelihood of a parameter set that enables
 better generalization. This is, of course, a lot of handwaving, that is further complicated by
 the fact that SGD results in limit cycles, rather than a true stationary distribution. 
+
 
 However, as I discuss in a subsequent writeup, replacing simple gradients by a "natural" gradient does
 result in the dynamics converging to a Boltzmann distribution over the loss function in parameter
