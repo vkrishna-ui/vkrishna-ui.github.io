@@ -104,7 +104,7 @@ The remaining ingredient needed to specify the training of a generative diffusio
 error function to be optimized. The most obvious objective function would be to perform score matching:   
    
 $$  
-L_{sm}[p_t]= \sum_{t}\Big\{\int{dx_{t} p_{t}(x_t)\lVert s_{\phi}(x_{t},t) - \nabla_{x}\log p_{t}(x_{t})\rVert^{2}}\Big\}  
+L_{sm}[p_t]= \sum_{t}\Big\{\int{dx_{t} p_{t}(x_t)\lVert s_{\phi}(x_{t},t) - \nabla_{x_t}\log p_{t}(x_{t})\rVert^{2}}\Big\}  
 $$  
 The score function $s_{\phi}(x,t)$ is represented by a deep neural network with hyper parameters $\phi$. 
 This objective function is intractable as the function  $\log p_{t}(x)$ is unknown.  
@@ -127,7 +127,7 @@ demonstrate this below:
 First, consider the following loss function:
 
 $$
-L_{d}[p_{\sigma}] \equiv \sum_{t}{\int{dy dx p_{\sigma}(y\vert x)p_{data}(x)\lVert s_{\phi}(y,t) - \nabla_{x_{t}}\log p(y\vert x)\rVert^{2}}}
+L_{d}[p_{\sigma}] \equiv \sum_{t}{\int{dy dx p_{\sigma}(y\vert x)p_{data}(x)\lVert s_{\phi}(y,t) - \nabla_{y}\log p(y\vert x)\rVert^{2}}}
 $$
 
 This is equivalent to minimizing for every $(y,t)$
