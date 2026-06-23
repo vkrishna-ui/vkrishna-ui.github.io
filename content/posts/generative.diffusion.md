@@ -200,7 +200,7 @@ first reference contains references to much of the relevant literature.
 
 1. C. -H. Lai, Y. Song, D. Kim, Y. Mitsufuji and S. Ermon, The Principles of Diffusion Models, 
 arxiv:2510.21890 (2026) https://arxiv.org/abs/2510.21890v2 . I found this paper to be a comprehensive and very 
-clear review of diffusion models and the principle they are based on. Much of what I have explained in this note
+clear review of diffusion models and the principles they are based on. Much of what I have explained in this note
 is derived and heavily borrowed from this review.
 2. H. Hasegawa, On the Construction of a Time Reversed Markoff Process. Progress of Theoretical Physics, 1976 
 vol 55(1), pgs. 90-105. doi:https://doi.org/10.1143/PTP.55.90 . This paper derives a comprehensive and elegant
