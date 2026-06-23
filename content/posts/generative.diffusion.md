@@ -97,7 +97,7 @@ This result was derived by Hasegawa in 1976 who constructed time-reversed dynami
 forward time evolution due to a linear dissipative operator, and separately by Anderson in 1982 who derived 
 the time reversed Ito process corresponding to a given forward process. 
   
-The appearance of the score function, $s(x) \equiv \nabla\log p_{t}(x)$ in the time reversed dynamics is the 
+The appearance of the score function, $s(x,t) \equiv \nabla\log p_{t}(x)$ in the time reversed dynamics is the 
 key property that enables the construction of generative diffusion models.   
   
 The remaining ingredient needed to specify the training of a generative diffusion model is to specify the 
@@ -127,12 +127,12 @@ demonstrate this below:
 First, consider the following loss function:
 
 $$
-L_{d}[p_{\sigma}] \equiv \sum_{t}{\int{dy dx p_{\sigma}(y\vert x)p_{data}(x)\lVert s_{\phi}(y,t) - \nabla_{x_{t}}\log p(y\vert x)\Big\rVert^{2}}}
+L_{d}[p_{\sigma}] \equiv \sum_{t}{\int{dy dx p_{\sigma}(y\vert x)p_{data}(x)\lVert s_{\phi}(y,t) - \nabla_{x_{t}}\log p(y\vert x)\rVert^{2}}}
 $$
 
 This is equivalent to minimizing for every $(y,t)$
 $$
-L' = \int{dx p_{\sigma}(x\vert y)\Big\lVert s_{\phi}(y,t) - \nabla_{y}\log p_{\sigma}(y\vert x)\rVert^{2}}
+L' = \int{dx p_{\sigma}(x\vert y)\lVert s_{\phi}(y,t) - \nabla_{y}\log p_{\sigma}(y\vert x)\rVert^{2}}
 $$   
 
 We get that $L'$ is minimized when
