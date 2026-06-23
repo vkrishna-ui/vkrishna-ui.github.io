@@ -158,7 +158,7 @@ $$
 $$
 where
 $$
-L_{sm}[p_{t}] \equiv \sum_{t}{dx_{t}dx p_{t}(x_{t}\vert x)p_{data}(x)\lVert s_{\phi}(x_{t},t) - \nabla_{x_{t}}\log p_{t}(x_{t}\vert x)\rVert^{2}}
+L_{sm}[p_{t}] \equiv \sum_{t}{\int{dx_{t}dx p_{t}(x_{t}\vert x)p_{data}(x)\lVert s_{\phi}(x_{t},t) - \nabla_{x_{t}}\log p_{t}(x_{t}\vert x)\rVert^{2}}}
 $$
 
 The time reversal properties of a Brownian process coupled with the "denoising" loss function that is numerically
