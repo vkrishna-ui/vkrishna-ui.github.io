@@ -3,7 +3,7 @@ title: "Diffusion Models: A brief description"
 date: 2026-06-20T23:35:53-04:00
 draft: false
 math: true
-weight: 1
+weight: 3
 tags: ["machine learning", "sgd", "optimization","generative models"]
 ---
 
